@@ -11,7 +11,9 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -19,11 +21,14 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "reflect-metadata": "^0.2.1",
     "@ai-first/core": "workspace:*",
-    "@ai-first/di": "workspace:*"
+    "@ai-first/di": "workspace:*",
+    "better-sqlite3": "^12.6.2",
+    "kysely": "^0.28.11",
+    "reflect-metadata": "^0.2.1"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
     "@types/pg": "^8.11.0",
     "pg": "^8.13.0",
     "tsup": "^8.0.0",
@@ -33,7 +38,16 @@
     "pg": ">=8.0.0"
   },
   "peerDependenciesMeta": {
-    "pg": { "optional": true }
+    "pg": {
+      "optional": true
+    }
   },
-  "keywords": ["ai-first", "orm", "mybatis-plus", "postgres", "decorator", "typescript"]
+  "keywords": [
+    "ai-first",
+    "orm",
+    "mybatis-plus",
+    "postgres",
+    "decorator",
+    "typescript"
+  ]
 }

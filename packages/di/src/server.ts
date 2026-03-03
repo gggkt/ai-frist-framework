@@ -18,5 +18,8 @@ export {
   Singleton,
   Scoped,
   AutoRegister,
+  Autowired,
+  getAutowiredProperties,
+  injectAutowiredProperties,
   registry,
 } from './decorators.js';

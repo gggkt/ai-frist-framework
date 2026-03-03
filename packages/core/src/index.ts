@@ -12,8 +12,10 @@ export * from './types.js';
 
 // Export decorators
 export {
+  Component,
   Service,
   Transactional,
+  getComponentMetadata,
   getServiceMetadata,
   isTransactional,
 } from './decorators.js';

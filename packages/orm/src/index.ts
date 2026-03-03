@@ -4,6 +4,14 @@
  * ORM framework with MyBatis-Plus compatible decorators
  */
 
+// Config
+export {
+  setDatabaseConfig,
+  getDatabaseConfig,
+  createAdapterFromEntity,
+  type DatabaseConfig,
+} from './config.js';
+
 // Decorators
 export {
   Entity,
@@ -36,6 +44,28 @@ export {
   type OrderBy,
 } from './base-mapper.js';
 
+// QueryWrapper (MyBatis-Plus 风格)
+export {
+  QueryWrapper,
+  LambdaQueryWrapper,
+  type Condition,
+  type OrderByClause,
+  type CompareOperator,
+} from './wrapper.js';
+
 // Adapters
-export { InMemoryAdapter } from './adapters/index.js';
-export { PostgresAdapter, type PostgresConfig, type PostgresAdapterOptions } from './adapters/index.js';
+export { KyselyAdapter, type KyselyAdapterOptions } from './adapters/index.js';
+
+// Database Factory (多数据库支持)
+export {
+  createKyselyDatabase,
+  getKyselyDatabase,
+  getKyselyDatabaseConfig,
+  closeKyselyDatabase,
+  isDatabaseInitialized,
+  type DatabaseType,
+  type DatabaseConnectionConfig,
+  type PostgresConnectionConfig,
+  type SqliteConnectionConfig,
+  type MysqlConnectionConfig,
+} from './database.js';

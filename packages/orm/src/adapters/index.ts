@@ -1,2 +1,1 @@
-export { InMemoryAdapter } from './memory-adapter.js';
-export { PostgresAdapter, type PostgresConfig, type PostgresAdapterOptions } from './postgres-adapter.js';
+export { KyselyAdapter, type KyselyAdapterOptions } from './kysely-adapter.js';

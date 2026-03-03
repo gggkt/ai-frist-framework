@@ -5,6 +5,8 @@
  * 运行时通过适配器执行实际的数据库操作
  */
 
+import type { QueryWrapper } from './wrapper.js';
+
 // ==================== Types ====================
 
 /** 分页参数 */
@@ -40,13 +42,13 @@ export interface OrderBy {
  * 
  * @example
  * ```typescript
- * @Mapper({ entity: User })
+ * // 开发时简洁写法
+ * @Mapper()
  * class UserMapper extends BaseMapper<User> {}
  * 
- * // 使用
- * const user = await userMapper.selectById(1);
- * const users = await userMapper.selectList({ status: 'ACTIVE' });
- * await userMapper.insert(newUser);
+ * // 构建后自动转换为
+ * @Mapper(User)
+ * class UserMapper extends BaseMapper<User> {}
  * ```
  */
 export abstract class BaseMapper<T extends { id?: number | string }> {
@@ -195,6 +197,106 @@ export abstract class BaseMapper<T extends { id?: number | string }> {
    */
   async delete(condition: QueryCondition<T>): Promise<number> {
     return this.getAdapter().deleteByCondition(condition);
+  }
+
+  // ==================== QueryWrapper 查询（MyBatis-Plus 风格）====================
+
+  /**
+   * 使用 QueryWrapper 查询列表
+   * 
+   * @example
+   * ```typescript
+   * const users = await userMapper.selectList(
+   *   new QueryWrapper<User>()
+   *     .eq('status', 1)
+   *     .gt('age', 18)
+   *     .orderByDesc('createdAt')
+   * );
+   * ```
+   */
+  async selectListByWrapper(wrapper: QueryWrapper<T>): Promise<T[]> {
+    const adapter = this.getAdapter() as any;
+    if (typeof adapter.selectListByWrapper === 'function') {
+      return adapter.selectListByWrapper(wrapper);
+    }
+    // 回退到普通查询（仅支持简单条件）
+    console.warn('[BaseMapper] Adapter does not support QueryWrapper, falling back to simple query');
+    return this.selectList({});
+  }
+
+  /**
+   * 使用 QueryWrapper 查询单条
+   * 
+   * @example
+   * ```typescript
+   * const user = await userMapper.selectOneByWrapper(
+   *   new QueryWrapper<User>().eq('email', 'test@test.com')
+   * );
+   * ```
+   */
+  async selectOneByWrapper(wrapper: QueryWrapper<T>): Promise<T | null> {
+    const adapter = this.getAdapter() as any;
+    if (typeof adapter.selectOneByWrapper === 'function') {
+      return adapter.selectOneByWrapper(wrapper);
+    }
+    const list = await this.selectListByWrapper(wrapper.limit(1));
+    return list.length > 0 ? list[0] : null;
+  }
+
+  /**
+   * 使用 QueryWrapper 查询数量
+   * 
+   * @example
+   * ```typescript
+   * const count = await userMapper.selectCountByWrapper(
+   *   new QueryWrapper<User>().eq('status', 1)
+   * );
+   * ```
+   */
+  async selectCountByWrapper(wrapper: QueryWrapper<T>): Promise<number> {
+    const adapter = this.getAdapter() as any;
+    if (typeof adapter.selectCountByWrapper === 'function') {
+      return adapter.selectCountByWrapper(wrapper);
+    }
+    const list = await this.selectListByWrapper(wrapper);
+    return list.length;
+  }
+
+  /**
+   * 使用 QueryWrapper 更新
+   * 
+   * @example
+   * ```typescript
+   * const count = await userMapper.updateByWrapper(
+   *   { status: 0 },
+   *   new QueryWrapper<User>().lt('lastLoginAt', thirtyDaysAgo)
+   * );
+   * ```
+   */
+  async updateByWrapper(data: Partial<T>, wrapper: QueryWrapper<T>): Promise<number> {
+    const adapter = this.getAdapter() as any;
+    if (typeof adapter.updateByWrapper === 'function') {
+      return adapter.updateByWrapper(data, wrapper);
+    }
+    throw new Error('Adapter does not support updateByWrapper');
+  }
+
+  /**
+   * 使用 QueryWrapper 删除
+   * 
+   * @example
+   * ```typescript
+   * const count = await userMapper.deleteByWrapper(
+   *   new QueryWrapper<User>().eq('status', -1)
+   * );
+   * ```
+   */
+  async deleteByWrapper(wrapper: QueryWrapper<T>): Promise<number> {
+    const adapter = this.getAdapter() as any;
+    if (typeof adapter.deleteByWrapper === 'function') {
+      return adapter.deleteByWrapper(wrapper);
+    }
+    throw new Error('Adapter does not support deleteByWrapper');
   }
 }
 

@@ -1,10 +1,13 @@
 /**
  * @ai-first/codegen
- * TypeScript to Java code generator
+ * TypeScript to Java code generator + Frontend API Client generator
  */
 export * from './types.js';
 export { parseSourceFile } from './parser.js';
 export { generateJavaClass } from './generator.js';
+export { generateApiClient, type CodegenOptions } from './client-generator.js';
+export { createDecoratorGenericTransformer, transformSourceCode } from './transformer.js';
+export { decoratorGenericPlugin } from './tsup-plugin.js';
 
 import { parseSourceFile } from './parser.js';
 import { generateJavaClass } from './generator.js';

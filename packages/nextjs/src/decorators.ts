@@ -3,7 +3,7 @@
  * Web layer (MVC) - completely aligned with Spring Boot
  */
 import 'reflect-metadata';
-import { Injectable, Singleton, inject } from '@ai-first/di/server';
+import { Injectable, Singleton, inject, injectAutowiredProperties } from '@ai-first/di/server';
 
 // Metadata keys
 const CONTROLLER_METADATA = Symbol('controller');
@@ -45,9 +45,10 @@ export interface RequestMappingOptions {
 /**
  * @RestController - Mark a class as REST controller
  * Equivalent to Spring Boot: @RestController + @RequestMapping("/api/users")
+ * Supports @Autowired property injection
  */
 export function RestController(options: RestControllerOptions = {}) {
-  return function <T extends { new (...args: any[]): {} }>(target: T) {
+  return function <T extends { new (...args: any[]): any }>(target: T) {
     // Save controller metadata
     Reflect.defineMetadata(CONTROLLER_METADATA, {
       ...options,
@@ -64,7 +65,25 @@ export function RestController(options: RestControllerOptions = {}) {
     Injectable()(target);
     Singleton()(target);
     
-    return target;
+    // 包装构造函数，支持 @Autowired 属性注入
+    const originalConstructor = target;
+    const newConstructor = function (this: any, ...args: any[]) {
+      const instance = new (originalConstructor as any)(...args);
+      injectAutowiredProperties(instance);
+      return instance;
+    } as unknown as T;
+    
+    newConstructor.prototype = originalConstructor.prototype;
+    Object.setPrototypeOf(newConstructor, originalConstructor);
+    
+    // 复制 metadata
+    const metadataKeys = Reflect.getMetadataKeys(originalConstructor);
+    metadataKeys.forEach(key => {
+      const value = Reflect.getMetadata(key, originalConstructor);
+      Reflect.defineMetadata(key, value, newConstructor);
+    });
+    
+    return newConstructor;
   };
 }
 

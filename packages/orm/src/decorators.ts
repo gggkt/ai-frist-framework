@@ -7,6 +7,9 @@
  */
 
 import 'reflect-metadata';
+import { Injectable, Singleton, inject } from '@ai-first/di/server';
+import { createAdapterFromEntity } from './config.js';
+import { isDatabaseInitialized } from './database.js';
 
 // ==================== Metadata Keys ====================
 
@@ -128,13 +131,62 @@ export const Column = TableField;
 
 /**
  * @Mapper 装饰器 - 标记 Mapper 接口
+ * 自动注册到 DI 容器，自动设置数据库适配器
+ * 
+ * @example
+ * @Mapper(User)
+ * export class UserMapper extends BaseMapper<User> {}
  */
-export function Mapper(options: MapperOptions = {}) {
-  return function <T extends { new (...args: any[]): {} }>(target: T) {
+export function Mapper(entity?: Function) {
+  return function <T extends { new (...args: any[]): any }>(target: T) {
     Reflect.defineMetadata(MAPPER_METADATA, {
-      ...options,
+      entity,
+      entityName: entity?.name,
       className: target.name,
     }, target);
+    
+    // Auto inject constructor dependencies
+    const paramTypes = Reflect.getMetadata('design:paramtypes', target) || [];
+    paramTypes.forEach((type: any, index: number) => {
+      inject(type)(target, undefined as any, index);
+    });
+    
+    // Apply DI decorators
+    Injectable()(target);
+    Singleton()(target);
+    
+    // 包装构造函数，在实例化时自动设置适配器
+    if (entity) {
+      const originalConstructor = target;
+      const newConstructor = function (this: any, ...args: any[]) {
+        const instance = new (originalConstructor as any)(...args);
+        
+        // 如果数据库已初始化且实例有 setAdapter 方法，自动设置适配器
+        if (isDatabaseInitialized() && typeof instance.setAdapter === 'function' && !instance.adapter) {
+          try {
+            const adapter = createAdapterFromEntity(entity as any);
+            instance.setAdapter(adapter);
+          } catch {
+            // 忽略错误，允许手动设置
+          }
+        }
+        
+        return instance;
+      } as unknown as T;
+      
+      // 复制原型和静态属性
+      newConstructor.prototype = originalConstructor.prototype;
+      Object.setPrototypeOf(newConstructor, originalConstructor);
+      
+      // 复制 metadata
+      const metadataKeys = Reflect.getMetadataKeys(originalConstructor);
+      metadataKeys.forEach(key => {
+        const value = Reflect.getMetadata(key, originalConstructor);
+        Reflect.defineMetadata(key, value, newConstructor);
+      });
+      
+      return newConstructor;
+    }
     
     return target;
   };

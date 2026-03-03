@@ -7,22 +7,32 @@
  * Validation decorators -> @ai-first/validation
  */
 import 'reflect-metadata';
-import { Injectable, Singleton, inject } from '@ai-first/di/server';
+import { Injectable, Singleton, inject, injectAutowiredProperties } from '@ai-first/di/server';
 import type { ServiceOptions } from './types.js';
 
 // Metadata keys
 const SERVICE_METADATA = Symbol('service');
+const COMPONENT_METADATA = Symbol('component');
 const TRANSACTIONAL_METADATA = Symbol('transactional');
 
-// ==================== Service Layer ====================
+// ==================== Component Layer ====================
 
 /**
- * @Service - Mark a class as domain service (like Spring @Service)
- * Auto-registers to DI container with constructor injection
+ * @Component - 通用组件装饰器 (like Spring @Component)
+ * 自动注册到 DI 容器，支持 @Autowired 属性注入
+ * 
+ * @example
+ * @Component()
+ * export class EmailHelper {
+ *   sendEmail(to: string, content: string) { ... }
+ * }
  */
-export function Service(options: ServiceOptions = {}) {
-  return function <T extends { new (...args: any[]): {} }>(target: T) {
-    Reflect.defineMetadata(SERVICE_METADATA, options, target);
+export function Component(options: { name?: string } = {}) {
+  return function <T extends { new (...args: any[]): any }>(target: T) {
+    Reflect.defineMetadata(COMPONENT_METADATA, {
+      ...options,
+      name: options.name || target.name,
+    }, target);
     
     // Auto inject constructor dependencies
     const paramTypes = Reflect.getMetadata('design:paramtypes', target) || [];
@@ -34,7 +44,76 @@ export function Service(options: ServiceOptions = {}) {
     Injectable()(target);
     Singleton()(target);
     
-    return target;
+    // 包装构造函数，支持 @Autowired 属性注入
+    const originalConstructor = target;
+    const newConstructor = function (this: any, ...args: any[]) {
+      const instance = new (originalConstructor as any)(...args);
+      injectAutowiredProperties(instance);
+      return instance;
+    } as unknown as T;
+    
+    newConstructor.prototype = originalConstructor.prototype;
+    Object.setPrototypeOf(newConstructor, originalConstructor);
+    
+    const metadataKeys = Reflect.getMetadataKeys(originalConstructor);
+    metadataKeys.forEach(key => {
+      const value = Reflect.getMetadata(key, originalConstructor);
+      Reflect.defineMetadata(key, value, newConstructor);
+    });
+    
+    return newConstructor;
+  };
+}
+
+// ==================== Service Layer ====================
+
+/**
+ * @Service - Mark a class as domain service (like Spring @Service)
+ * Auto-registers to DI container with constructor injection and @Autowired support
+ * 
+ * @example
+ * @Service()
+ * export class UserService {
+ *   @Autowired()
+ *   private userMapper!: UserMapper;
+ * }
+ */
+export function Service(options: ServiceOptions = {}) {
+  return function <T extends { new (...args: any[]): any }>(target: T) {
+    Reflect.defineMetadata(SERVICE_METADATA, {
+      ...options,
+      name: options.name || target.name,
+    }, target);
+    
+    // Auto inject constructor dependencies
+    const paramTypes = Reflect.getMetadata('design:paramtypes', target) || [];
+    paramTypes.forEach((type: any, index: number) => {
+      inject(type)(target, undefined as any, index);
+    });
+    
+    // Apply DI decorators
+    Injectable()(target);
+    Singleton()(target);
+    
+    // 包装构造函数，支持 @Autowired 属性注入
+    const originalConstructor = target;
+    const newConstructor = function (this: any, ...args: any[]) {
+      const instance = new (originalConstructor as any)(...args);
+      injectAutowiredProperties(instance);
+      return instance;
+    } as unknown as T;
+    
+    newConstructor.prototype = originalConstructor.prototype;
+    Object.setPrototypeOf(newConstructor, originalConstructor);
+    
+    // 复制 metadata
+    const metadataKeys = Reflect.getMetadataKeys(originalConstructor);
+    metadataKeys.forEach(key => {
+      const value = Reflect.getMetadata(key, originalConstructor);
+      Reflect.defineMetadata(key, value, newConstructor);
+    });
+    
+    return newConstructor;
   };
 }
 
@@ -64,6 +143,10 @@ export function Transactional() {
 }
 
 // ==================== Metadata Getters ====================
+
+export function getComponentMetadata(target: any): { name?: string } | undefined {
+  return Reflect.getMetadata(COMPONENT_METADATA, target);
+}
 
 export function getServiceMetadata(target: any): ServiceOptions | undefined {
   return Reflect.getMetadata(SERVICE_METADATA, target);

@@ -8,6 +8,9 @@ dist
 *.tsbuildinfo
 .turbo
 
+# Database files
+*.db
+
 # Environment
 .env
 .env.local
@@ -40,3 +43,6 @@ yarn-error.log*
 .cache
 .temp
 tmp
+
+# AI-First transformer cache
+.~*.ts

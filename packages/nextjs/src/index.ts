@@ -1,6 +1,6 @@
 /**
  * @ai-first/nextjs
- * Spring Boot style decorators and utilities for Next.js
+ * Spring Boot style HTTP decorators and Express router
  */
 
 // Export decorators
@@ -26,11 +26,11 @@ export {
   type HttpMethod,
 } from './decorators.js';
 
-// Export route handler utilities
-export { createRouteHandler, createRouteHandlers } from './route-handler.js';
+// Export Express router
+export { createExpressRouter, type ExpressRouterOptions } from './express-router.js';
 
-// Export auto router
-export { createApiRouter } from './router.js';
+// Export Bootstrap (Spring Boot style auto-configuration)
+export { createApp, type AppOptions, type DatabaseConnectionConfig } from './bootstrap.js';
 
 // Export Feign-style API client (with reflect-metadata)
 export {
