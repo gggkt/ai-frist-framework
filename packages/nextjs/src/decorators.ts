@@ -11,6 +11,7 @@ const REQUEST_MAPPING_METADATA = Symbol('requestMapping');
 const PATH_VARIABLE_METADATA = Symbol('pathVariable');
 const REQUEST_PARAM_METADATA = Symbol('requestParam');
 const REQUEST_BODY_METADATA = Symbol('requestBody');
+const REQUEST_PART_METADATA = Symbol('requestPart');
 
 /** 导出供 ApiContract 复用的元数据 key */
 export { CONTROLLER_METADATA, REQUEST_MAPPING_METADATA };
@@ -172,6 +173,55 @@ export function RequestBody() {
   };
 }
 
+// ==================== Multipart / File Upload ====================
+
+/**
+ * MultipartFile - Spring Boot compatible interface for uploaded files.
+ * Equivalent to Java: org.springframework.web.multipart.MultipartFile
+ *
+ * @example
+ * @PostMapping('/upload')
+ * async upload(@RequestPart('file') file: MultipartFile) {
+ *   const bytes = file.getBytes();
+ *   await file.transferTo('/tmp/uploaded_' + file.getOriginalFilename());
+ *   return { filename: file.getOriginalFilename(), size: file.getSize() };
+ * }
+ */
+export interface MultipartFile {
+  /** Returns the name of the parameter in the multipart form. */
+  getName(): string;
+  /** Returns the original filename in the client's filesystem. */
+  getOriginalFilename(): string;
+  /** Returns the content type of the file, or null if not defined. */
+  getContentType(): string | null;
+  /** Returns the size of the file in bytes. */
+  getSize(): number;
+  /** Returns the contents of the file as a Buffer (byte array). */
+  getBytes(): Buffer;
+  /** Returns whether the uploaded file is empty. */
+  isEmpty(): boolean;
+  /** Transfer the received file to the given destination path. */
+  transferTo(dest: string): Promise<void>;
+}
+
+/**
+ * @RequestPart - Extract a part from a multipart/form-data request (like Spring Boot @RequestPart)
+ * Used with file uploads. The route automatically gets multer middleware applied.
+ *
+ * @param name - The name of the form field (defaults to 'file')
+ *
+ * @example
+ * @PostMapping('/upload')
+ * async upload(@RequestPart('avatar') avatar: MultipartFile) { ... }
+ */
+export function RequestPart(name?: string) {
+  return function (target: any, propertyKey: string, parameterIndex: number) {
+    const requestParts = Reflect.getMetadata(REQUEST_PART_METADATA, target, propertyKey) || {};
+    requestParts[parameterIndex] = { name: name || 'file' };
+    Reflect.defineMetadata(REQUEST_PART_METADATA, requestParts, target, propertyKey);
+  };
+}
+
 // ==================== Metadata Getters ====================
 
 export function getControllerMetadata(target: any): RestControllerOptions | undefined {
@@ -192,4 +242,8 @@ export function getRequestParams(target: any, methodName: string): Record<number
 
 export function getRequestBody(target: any, methodName: string): Record<number, boolean> {
   return Reflect.getMetadata(REQUEST_BODY_METADATA, target, methodName) || {};
+}
+
+export function getRequestParts(target: any, methodName: string): Record<number, { name: string }> {
+  return Reflect.getMetadata(REQUEST_PART_METADATA, target, methodName) || {};
 }

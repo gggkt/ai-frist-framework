@@ -40,6 +40,15 @@ pnpm add @ai-first/nextjs
 | `@RequestParam(name?, required?)` | `@RequestParam` | 提取 URL 查询参数 |
 | `@QueryParam(name?, required?)` | `@RequestParam` | `@RequestParam` 的别名 |
 | `@RequestBody()` | `@RequestBody` | 提取请求体（JSON） |
+| `@RequestPart(name?)` | `@RequestPart` | 提取 `multipart/form-data` 中的文件字段，自动注入 `MultipartFile` 对象 |
+
+### 文件上传（File Upload）
+
+| TypeScript API | 对应 Java Spring 类型 | 说明 |
+|---|---|---|
+| `MultipartFile` 接口 | `org.springframework.web.multipart.MultipartFile` | 上传文件的抽象，提供 `getName()`、`getOriginalFilename()`、`getContentType()`、`getSize()`、`getBytes()`、`isEmpty()`、`transferTo(dest)` |
+
+使用 `@RequestPart` 的方法路由会自动挂载 multer 内存存储中间件，无需额外配置。
 
 ### 客户端（Feign Client 风格）
 
@@ -103,6 +112,30 @@ const app = await createApp({
   database: { type: 'sqlite', filename: ':memory:' },
 });
 app.listen(3001, () => console.log('Server running on port 3001'));
+```
+
+```typescript
+// 文件上传示例（Spring Boot @RequestPart 风格）
+import { RestController, PostMapping, RequestPart, type MultipartFile } from '@ai-first/nextjs';
+
+@RestController({ path: '/files' })
+export class FileController {
+  @PostMapping('/upload')
+  async upload(@RequestPart('file') file: MultipartFile) {
+    // 获取文件元数据
+    console.log('原始文件名:', file.getOriginalFilename()); // e.g. "photo.jpg"
+    console.log('Content-Type:', file.getContentType());    // e.g. "image/jpeg"
+    console.log('文件大小:', file.getSize());               // bytes
+
+    // 获取文件内容（Buffer）
+    const bytes = file.getBytes();
+
+    // 保存到磁盘
+    await file.transferTo('/uploads/' + file.getOriginalFilename());
+
+    return { filename: file.getOriginalFilename(), size: file.getSize() };
+  }
+}
 ```
 
 ---
@@ -235,18 +268,10 @@ async me(@CookieValue('sessionId') sessionId: string) {
 }
 ```
 
-#### 9. `@RequestPart` ⭐⭐
+#### 9. `@RequestPart` ⭐⭐ ✅ 已实现
 **对应 Java**：`@RequestPart("file") MultipartFile file`
 
-处理 `multipart/form-data` 上传请求，提取文件或表单字段。
-
-```typescript
-// 期望实现
-@PostMapping('/upload')
-async upload(@RequestPart('file') file: Express.Multer.File) {
-  return this.fileService.save(file);
-}
-```
+处理 `multipart/form-data` 上传请求，提取文件字段，自动注入 `MultipartFile` 对象。详见"已实现的功能"章节。
 
 #### 10. `@ModelAttribute` ⭐⭐
 **对应 Java**：`@ModelAttribute`
@@ -484,12 +509,7 @@ async profile(@CurrentUser() user: UserDetails) {
 
 提取 URL 路径段中的矩阵变量（如 `/users/1;role=admin`）。
 
-#### 25. `MultipartFile` 等价类型 ⭐⭐
-**对应 Java**：`MultipartFile`
-
-文件上传的类型抽象，配合 `@RequestPart` 使用，提供文件名、大小、内容类型、字节流等属性。
-
-#### 26. `HttpServletRequest` / `HttpServletResponse` 直接注入 ⭐
+#### 25. `HttpServletRequest` / `HttpServletResponse` 直接注入 ⭐
 **对应 Java**：方法参数直接声明 `HttpServletRequest req`
 
 允许处理方法直接获取原始 Express `Request` / `Response` 对象（通过专门的参数装饰器如 `@Req()` / `@Res()`）。
@@ -503,7 +523,7 @@ async stream(@Req() req: Request, @Res() res: Response) {
 }
 ```
 
-#### 27. 静态资源服务 ⭐
+#### 26. 静态资源服务 ⭐
 **对应 Java**：`WebMvcConfigurer.addResourceHandlers()`
 
 在 `createApp` 中支持静态资源目录配置（等价于 Spring Boot 的 `spring.resources.static-locations`）。
@@ -517,13 +537,13 @@ async stream(@Req() req: Request, @Res() res: Response) {
 | 类装饰器 | `@RestController` | `@Controller`、`@RestControllerAdvice`、`@ControllerAdvice` |
 | 方法映射装饰器 | `@RequestMapping`、`@GetMapping`、`@PostMapping`、`@PutMapping`、`@DeleteMapping`、`@PatchMapping` | `produces`/`consumes` 选项 |
 | 方法装饰器 | — | `@ResponseStatus`、`@ExceptionHandler`、`@CrossOrigin`、`@InitBinder` |
-| 参数装饰器 | `@PathVariable`、`@RequestParam`、`@RequestBody` | `@RequestHeader`、`@CookieValue`、`@RequestPart`、`@ModelAttribute`、`@RequestAttribute`、`@SessionAttribute`、`@MatrixVariable`、`@Req`/`@Res` |
+| 参数装饰器 | `@PathVariable`、`@RequestParam`、`@RequestBody`、`@RequestPart` | `@RequestHeader`、`@CookieValue`、`@ModelAttribute`、`@RequestAttribute`、`@SessionAttribute`、`@MatrixVariable`、`@Req`/`@Res` |
 | 请求验证 | — | `@Valid`/`@Validated` + `@ai-first/validation` 集成 |
 | 响应抽象 | — | `ResponseEntity<T>`、`HttpStatus` 枚举 |
 | 拦截器/过滤器 | — | `HandlerInterceptor`、`WebMvcConfigurer`、`Filter` |
 | 分页 | — | `Pageable`、`PageRequest`、`Page<T>` |
 | 安全（可选） | — | `@PreAuthorize`、`@CurrentUser` |
-| 文件上传 | — | `MultipartFile`、`@RequestPart` |
+| 文件上传 | `MultipartFile`、`@RequestPart`（multer 内存存储，自动挂载） | 多文件字段批量上传、磁盘存储配置 |
 | 异步 | 原生 `async/await` | `@Async` 后台任务 |
 | 框架引导 | `createApp`（扫描 controller/service/mapper） | 拦截器注册、静态资源、全局异常处理器 |
 

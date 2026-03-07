@@ -16,14 +16,17 @@ export {
   RequestParam,
   QueryParam,
   RequestBody,
+  RequestPart,
   getControllerMetadata,
   getRequestMappings,
   getPathVariables,
   getRequestParams,
   getRequestBody,
+  getRequestParts,
   type RestControllerOptions,
   type RequestMappingOptions,
   type HttpMethod,
+  type MultipartFile,
 } from './decorators.js';
 
 // Export Express router

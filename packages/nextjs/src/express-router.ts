@@ -22,9 +22,13 @@ import {
   getPathVariables,
   getRequestBody,
   getRequestParams,
+  getRequestParts,
+  type MultipartFile,
 } from './decorators.js';
 import { Router, IRouter } from 'express';
 import { Container, injectAutowiredProperties } from '@ai-first/di/server';
+import multer from 'multer';
+import { writeFile } from 'fs/promises';
 
 export interface ExpressRouterOptions {
   /**
@@ -38,17 +42,31 @@ export interface ExpressRouterOptions {
   verbose?: boolean;
 }
 
-type AnyRequest  = { params: Record<string, string>; query: Record<string, string>; body: any };
+type MulterFile = {
+  fieldname: string;
+  originalname: string;
+  mimetype: string;
+  size: number;
+  buffer: Buffer;
+};
+
+type AnyRequest  = {
+  params: Record<string, string>;
+  query: Record<string, string>;
+  body: any;
+  file?: MulterFile;
+  files?: Record<string, MulterFile[]>;
+};
 type AnyResponse = { json: (data: any) => void; status: (code: number) => AnyResponse };
 type NextFn      = (err?: any) => void;
 type Handler     = (req: AnyRequest, res: AnyResponse, next: NextFn) => void;
 
 interface MiniRouter {
-  get(path: string, handler: Handler): void;
-  post(path: string, handler: Handler): void;
-  put(path: string, handler: Handler): void;
-  delete(path: string, handler: Handler): void;
-  patch(path: string, handler: Handler): void;
+  get(path: string, ...handlers: any[]): void;
+  post(path: string, ...handlers: any[]): void;
+  put(path: string, ...handlers: any[]): void;
+  delete(path: string, ...handlers: any[]): void;
+  patch(path: string, ...handlers: any[]): void;
 }
 
 /**
@@ -123,13 +141,22 @@ function registerController(
       console.log(`[AI-First] ${httpMethod.toUpperCase().padEnd(7)} ${fullPath}`);
     }
 
+    const pathVars    = getPathVariables(ControllerClass.prototype, methodName);
+    const bodyParams  = getRequestBody(ControllerClass.prototype, methodName);
+    const queryParams = getRequestParams(ControllerClass.prototype, methodName);
+    const partParams  = getRequestParts(ControllerClass.prototype, methodName);
+
+    // Build multer middleware when the handler has @RequestPart parameters
+    const uploadMiddleware = Object.keys(partParams).length > 0
+      ? multer({ storage: multer.memoryStorage() }).fields(
+          Object.values(partParams).map(p => ({ name: p.name, maxCount: 1 }))
+        )
+      : null;
+
     const handler: Handler = async (req, res, _next) => {
       const start = Date.now();
       try {
         const controllerMethod = instance[methodName];
-        const pathVars   = getPathVariables(ControllerClass.prototype, methodName);
-        const bodyParams = getRequestBody(ControllerClass.prototype, methodName);
-        const queryParams = getRequestParams(ControllerClass.prototype, methodName);
 
         const paramCount = controllerMethod.length;
         const args: any[] = new Array(paramCount);
@@ -150,6 +177,16 @@ function registerController(
           args[Number(idx)] = req.query[name];
         }
 
+        // 注入 @RequestPart (multipart file upload)
+        for (const [idx, part] of Object.entries(partParams)) {
+          const { name } = part as { name: string };
+          const multerFiles = req.files as Record<string, MulterFile[]> | undefined;
+          const multerFile = multerFiles?.[name]?.[0];
+          if (multerFile) {
+            args[Number(idx)] = createMultipartFile(multerFile);
+          }
+        }
+
         const result = await controllerMethod.apply(instance, args);
 
         if (verbose) {
@@ -165,6 +202,27 @@ function registerController(
       }
     };
 
-    router[httpMethod](fullPath, handler);
+    if (uploadMiddleware) {
+      router[httpMethod](fullPath, uploadMiddleware, handler);
+    } else {
+      router[httpMethod](fullPath, handler);
+    }
   }
+}
+
+/**
+ * Create a Spring Boot compatible MultipartFile from a multer file object.
+ */
+function createMultipartFile(multerFile: MulterFile): MultipartFile {
+  return {
+    getName: () => multerFile.fieldname,
+    getOriginalFilename: () => multerFile.originalname,
+    getContentType: () => multerFile.mimetype || null,
+    getSize: () => multerFile.size,
+    getBytes: () => multerFile.buffer,
+    isEmpty: () => multerFile.size === 0,
+    transferTo: async (dest: string) => {
+      await writeFile(dest, multerFile.buffer);
+    },
+  };
 }
