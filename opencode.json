@@ -2,9 +2,7 @@
   "$schema": "https://opencode.ai/config.json",
   "provider": {
     "bailian": {
-      "env": {
-        "apiKey": "BAILIAN_API_KEY"
-      },
+      "env": ["BAILIAN_API_KEY"],
       "options": {
         "baseURL": "https://dashscope.aliyuncs.com/compatible-mode/v1"
       },
