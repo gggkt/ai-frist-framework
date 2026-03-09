@@ -43,8 +43,10 @@ jobs:
         uses: anomalyco/opencode/github@latest
         env:
           BAILIAN_API_KEY: ${{ secrets.BAILIAN_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           model: bailian/qwen3.5-plus
+          use_github_token: true
           prompt: |
             请分析这个 Issue 并进行分类：
             - 判断 Issue 类型（bug/feature/question/documentation）
