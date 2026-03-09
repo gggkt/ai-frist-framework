@@ -431,10 +431,10 @@ export function formatDate(date: Date, pattern: string, timezone?: string): stri
       y  = parseInt(parts.year, 10);
       mo = parseInt(parts.month, 10);
       d  = parseInt(parts.day, 10);
-      h  = parseInt(parts.hour, 10) % 24; // Defensive: guard against non-standard '24' returned by some ICU builds at midnight
+      h  = parseInt(parts.hour, 10) % 24; // Normalizes hour 24→0: some ICU/V8 builds represent midnight as '24:00:00' rather than '00:00:00'
       mi = parseInt(parts.minute, 10);
       s  = parseInt(parts.second, 10);
-      ms = date.getMilliseconds();        // Intl doesn't expose sub-second parts
+      ms = date.getMilliseconds(); // Milliseconds are sub-second precision; timezones offset by whole minutes only, so this value is timezone-independent
     } catch {
       // Fallback to local time if the timezone string is unrecognised
       y = date.getFullYear(); mo = date.getMonth() + 1; d = date.getDate();
@@ -496,6 +496,9 @@ export function formatDate(date: Date, pattern: string, timezone?: string): stri
  * - Plain objects / primitives: returned as-is (nested objects are still walked).
  * - `Date` values without an annotation: returned unchanged (serialized to ISO
  *   string by JSON.stringify as usual).
+ * - Non-plain built-in objects (Map, Set, Buffer, etc.) are not transformed and
+ *   will appear as empty `{}` if returned directly; avoid returning them from
+ *   controllers — use arrays or plain DTOs instead.
  *
  * @param value The value to transform (typically the controller return value)
  */
