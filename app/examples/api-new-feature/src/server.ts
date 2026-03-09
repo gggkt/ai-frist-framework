@@ -7,6 +7,7 @@
  *   3. MultipartFile   — Spring Boot 兼容文件接口 (@ai-partner-x/aiko-boot-starter-web)
  *   4. @ModelAttribute — query + form body 绑定 (@ai-partner-x/aiko-boot-starter-web)
  *   5. @RequestAttribute — Express req 自定义属性注入 (@ai-partner-x/aiko-boot-starter-web)
+ *   6. @JsonFormat     — Date 属性 JSON 序列化格式化 (@ai-partner-x/aiko-boot-starter-web)
  *
  * 配置:
  *   - app.config.ts → server.port / server.servlet.contextPath
@@ -80,6 +81,11 @@ Feature 4 — @ModelAttribute (query / form 绑定)
 Feature 5 — @RequestAttribute (读取中间件设置的 req 属性)
   GET    /api/form/profile
   GET    /api/form/tenant-info
+
+Feature 6 — @JsonFormat (JSON 日期序列化格式化)
+  GET    /api/json-format/user/1    单个 DTO，三种格式化规则
+  GET    /api/json-format/users     DTO 数组（递归格式化）
+  GET    /api/json-format/compare   同一时刻：UTC / 上海时区 / 时间戳对比
 ──────────────────────────────────────────────────────────
 `);
 
