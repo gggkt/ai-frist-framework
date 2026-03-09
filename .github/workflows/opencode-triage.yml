@@ -45,7 +45,7 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.BAILIAN_API_KEY }}
           OPENAI_BASE_URL: https://dashscope.aliyuncs.com/compatible-mode/v1
         with:
-          model: openai/qwen-max-latest
+          model: openai/qwen3.5-plus
           prompt: |
             请分析这个 Issue 并进行分类：
             - 判断 Issue 类型（bug/feature/question/documentation）
