@@ -14,6 +14,7 @@ const REQUEST_BODY_METADATA = 'aiko-boot:requestBody';
 const REQUEST_PART_METADATA = 'aiko-boot:requestPart';
 const MODEL_ATTRIBUTE_METADATA = 'aiko-boot:modelAttribute';
 const REQUEST_ATTRIBUTE_METADATA = 'aiko-boot:requestAttribute';
+const JSON_FORMAT_METADATA = 'aiko-boot:jsonFormat';
 
 /** 导出供 ApiContract 复用的元数据 key */
 export { CONTROLLER_METADATA, REQUEST_MAPPING_METADATA };
@@ -317,4 +318,219 @@ export function getModelAttributes(target: any, methodName: string): Record<numb
 
 export function getRequestAttributes(target: any, methodName: string): Record<number, { name: string }> {
   return Reflect.getMetadata(REQUEST_ATTRIBUTE_METADATA, target, methodName) || {};
+}
+
+// Token keys used by formatDate, sorted by length descending.
+// Pre-computed at module load so formatDate never re-allocates or re-sorts on each call.
+// The comparison inside formatDate is case-sensitive, so 'MM' (month) and
+// 'mm' (minute) are never confused even though they share the same length.
+const SORTED_DATE_TOKEN_KEYS: ReadonlyArray<string> = [
+  'yyyy', 'SSS', 'yy', 'MM', 'dd', 'HH', 'mm', 'ss', 'M', 'd', 'H', 'm', 's', 'S',
+];
+
+/**
+ * Serialization shape for @JsonFormat.
+ * - `STRING` (default): serialize Date as a formatted string (uses `pattern`)
+ * - `NUMBER`: serialize Date as epoch milliseconds (Unix timestamp × 1000)
+ */
+export type JsonFormatShape = 'STRING' | 'NUMBER';
+
+/**
+ * Options for the @JsonFormat decorator.
+ * Mirrors Jackson's @JsonFormat annotation in Spring Boot.
+ */
+export interface JsonFormatOptions {
+  /**
+   * Java SimpleDateFormat style pattern used when shape is STRING.
+   * Supported tokens: yyyy yy MM M dd d HH H mm m ss s SSS S
+   * @example 'yyyy-MM-dd HH:mm:ss'
+   * @example 'yyyy/MM/dd'
+   */
+  pattern?: string;
+  /**
+   * IANA timezone identifier or fixed-offset string.
+   * When omitted the local (process) timezone is used.
+   * @example 'UTC'
+   * @example 'Asia/Shanghai'
+   * @example 'America/New_York'
+   */
+  timezone?: string;
+  /**
+   * How the value should be serialized.
+   * Defaults to 'STRING'.
+   */
+  shape?: JsonFormatShape;
+}
+
+/**
+ * @JsonFormat – Controls how a property is serialized in JSON responses.
+ *
+ * Equivalent to Jackson's `@JsonFormat` annotation in Spring Boot.
+ * Most commonly used to format `Date` properties into human-readable strings.
+ *
+ * @example
+ * ```typescript
+ * class UserDto {
+ *   \@JsonFormat({ pattern: 'yyyy-MM-dd HH:mm:ss', timezone: 'Asia/Shanghai' })
+ *   createTime?: Date;
+ *
+ *   \@JsonFormat({ pattern: 'yyyy-MM-dd' })
+ *   birthday?: Date;
+ *
+ *   \@JsonFormat({ shape: 'NUMBER' })
+ *   updatedAt?: Date;
+ * }
+ * ```
+ */
+export function JsonFormat(options: JsonFormatOptions = {}) {
+  return function (target: object, propertyKey: string) {
+    const formats = Reflect.getMetadata(JSON_FORMAT_METADATA, target) || {};
+    formats[propertyKey] = options;
+    Reflect.defineMetadata(JSON_FORMAT_METADATA, formats, target);
+  };
+}
+
+/**
+ * Returns the @JsonFormat metadata map for the given prototype object.
+ * Keys are property names; values are the associated JsonFormatOptions.
+ */
+export function getJsonFormatFields(target: object): Record<string, JsonFormatOptions> {
+  return Reflect.getMetadata(JSON_FORMAT_METADATA, target) || {};
+}
+
+/**
+ * Format a Date using a Java SimpleDateFormat-style pattern.
+ *
+ * Supported tokens (processed longest-first, so 'yyyy' beats 'yy', 'MM' beats 'M', etc.):
+ *   yyyy  4-digit year       yy   2-digit year
+ *   MM    2-digit month      M    1-digit month
+ *   dd    2-digit day        d    1-digit day
+ *   HH    2-digit hour(0-23) H    1-digit hour
+ *   mm    2-digit minute     m    1-digit minute
+ *   ss    2-digit second     s    1-digit second
+ *   SSS   3-digit millis     S    unpadded millis (0-999)
+ */
+export function formatDate(date: Date, pattern: string, timezone?: string): string {
+  const pad = (n: number, len = 2) => String(n).padStart(len, '0');
+
+  let y = 0, mo = 0, d = 0, h = 0, mi = 0, s = 0, ms = 0;
+
+  if (timezone) {
+    try {
+      const parts: Record<string, string> = {};
+      new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      }).formatToParts(date).forEach(p => { parts[p.type] = p.value; });
+      y  = parseInt(parts.year, 10);
+      mo = parseInt(parts.month, 10);
+      d  = parseInt(parts.day, 10);
+      h  = parseInt(parts.hour, 10) % 24; // Defensive: guard against non-standard '24' returned by some ICU builds at midnight
+      mi = parseInt(parts.minute, 10);
+      s  = parseInt(parts.second, 10);
+      ms = date.getMilliseconds();        // Intl doesn't expose sub-second parts
+    } catch {
+      // Fallback to local time if the timezone string is unrecognised
+      y = date.getFullYear(); mo = date.getMonth() + 1; d = date.getDate();
+      h = date.getHours();    mi = date.getMinutes();   s = date.getSeconds(); ms = date.getMilliseconds();
+    }
+  } else {
+    y = date.getFullYear(); mo = date.getMonth() + 1; d = date.getDate();
+    h = date.getHours();    mi = date.getMinutes();   s = date.getSeconds(); ms = date.getMilliseconds();
+  }
+
+  // Build the token → value map once per call, then walk the pattern using
+  // the pre-sorted key list so no sorting happens at call time.
+  const tokenValues: Record<string, string> = {
+    yyyy: String(y),
+    yy:   String(y).slice(-2),
+    MM:   pad(mo),
+    M:    String(mo),
+    dd:   pad(d),
+    d:    String(d),
+    HH:   pad(h),
+    H:    String(h),
+    mm:   pad(mi),
+    m:    String(mi),
+    ss:   pad(s),
+    s:    String(s),
+    SSS:  pad(ms, 3),
+    S:    String(ms),
+  };
+
+  let result = '';
+  let i = 0;
+  while (i < pattern.length) {
+    let matched = false;
+    for (const token of SORTED_DATE_TOKEN_KEYS) {
+      if (pattern.startsWith(token, i)) {
+        result += tokenValues[token];
+        i += token.length;
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) {
+      result += pattern[i++];
+    }
+  }
+  return result;
+}
+
+/**
+ * Recursively transform `value` by applying @JsonFormat rules found on any
+ * class-instance prototypes within the object graph.
+ *
+ * - Class instances: own enumerable properties are copied via `Object.keys()`
+ *   (non-enumerable properties and accessor-only getters are not included, which
+ *   matches the default `JSON.stringify` behaviour); any `Date` property
+ *   annotated with @JsonFormat is converted to a string (or number) according
+ *   to the decorator options.
+ * - Arrays: each element is recursively transformed.
+ * - Plain objects / primitives: returned as-is (nested objects are still walked).
+ * - `Date` values without an annotation: returned unchanged (serialized to ISO
+ *   string by JSON.stringify as usual).
+ *
+ * @param value The value to transform (typically the controller return value)
+ */
+export function applyJsonFormat(value: unknown): unknown {
+  if (value === null || value === undefined) return value;
+  if (Array.isArray(value)) {
+    return value.map(item => applyJsonFormat(item));
+  }
+  if (value instanceof Date) {
+    return value;
+  }
+  if (typeof value === 'object') {
+    const proto = Object.getPrototypeOf(value);
+    const formats: Record<string, JsonFormatOptions> =
+      proto && proto !== Object.prototype
+        ? (Reflect.getMetadata(JSON_FORMAT_METADATA, proto) || {})
+        : {};
+
+    const result: Record<string, unknown> = {};
+    for (const key of Object.keys(value as Record<string, unknown>)) {
+      const val = (value as Record<string, unknown>)[key];
+      const fmt = formats[key];
+      if (fmt && val instanceof Date) {
+        if (fmt.shape === 'NUMBER') {
+          result[key] = val.getTime();
+        } else {
+          result[key] = fmt.pattern
+            ? formatDate(val, fmt.pattern, fmt.timezone)
+            : val.toISOString();
+        }
+      } else {
+        result[key] = applyJsonFormat(val);
+      }
+    }
+    return result;
+  }
+  return value;
 }

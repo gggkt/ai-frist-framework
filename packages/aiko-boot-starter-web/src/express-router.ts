@@ -25,6 +25,7 @@ import {
   getRequestParts,
   getModelAttributes,
   getRequestAttributes,
+  applyJsonFormat,
   type MultipartFile,
 } from './decorators.js';
 import { Router, IRouter } from 'express';
@@ -232,7 +233,7 @@ function registerController(
           console.log(`[aiko-boot] ← ${httpMethod.toUpperCase()} ${fullPath} 200 (${Date.now() - start}ms)`);
         }
 
-        res.json({ success: true, data: result });
+        res.json({ success: true, data: applyJsonFormat(result) });
       } catch (error: any) {
         if (verbose) {
           console.error(`[aiko-boot] ← ${httpMethod.toUpperCase()} ${fullPath} 400 (${Date.now() - start}ms) ${error.message}`);

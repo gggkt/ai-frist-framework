@@ -26,6 +26,9 @@ export {
   RequestPart,
   ModelAttribute,
   RequestAttribute,
+  JsonFormat,
+  applyJsonFormat,
+  formatDate,
   getControllerMetadata,
   getRequestMappings,
   getPathVariables,
@@ -34,10 +37,13 @@ export {
   getRequestParts,
   getModelAttributes,
   getRequestAttributes,
+  getJsonFormatFields,
   type RestControllerOptions,
   type RequestMappingOptions,
   type HttpMethod,
   type MultipartFile,
+  type JsonFormatOptions,
+  type JsonFormatShape,
 } from './decorators.js';
 
 // Export Express router
