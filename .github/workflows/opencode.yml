@@ -56,12 +56,19 @@ jobs:
           script: |
             const prNumber = context.issue.number;
             
-            // 检查 PR 状态
+            // 配置 git 身份
             const { data: pr } = await github.rest.pulls.get({
               owner: context.repo.owner,
               repo: context.repo.repo,
               pull_number: prNumber
             });
+            
+            // 设置 git 用户信息（使用 PR 作者的信息）
+            const prAuthor = pr.user.login;
+            const prAuthorEmail = `${prAuthor}@users.noreply.github.com`;
+            
+            await exec.exec('git', ['config', 'user.email', prAuthorEmail]);
+            await exec.exec('git', ['config', 'user.name', prAuthor]);
             
             if (pr.merged) {
               console.log('PR is already merged');
