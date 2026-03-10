@@ -13,6 +13,19 @@ import { createAdapterFromConfig, isStorageInitialized } from './config.js';
 
 const DEFAULT_ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 const DEFAULT_MAX_SIZE = 5 * 1024 * 1024;
+const MIME_ALIAS_MAP: Record<string, string> = {
+  'image/jpg': 'image/jpeg',
+  'image/pjpeg': 'image/jpeg',
+};
+
+function normalizeMimeType(mimeType: string): string {
+  const normalized = mimeType.toLowerCase();
+  return MIME_ALIAS_MAP[normalized] ?? normalized;
+}
+
+function isMimeTypeConsistent(detectedMimeType: string, extensionMimeType: string): boolean {
+  return normalizeMimeType(detectedMimeType) === normalizeMimeType(extensionMimeType);
+}
 
 /**
  * 存储服务
@@ -90,7 +103,7 @@ export class StorageService {
     if (
       detectedMimeType &&
       extensionMimeType !== 'application/octet-stream' &&
-      detectedMimeType !== extensionMimeType
+      !isMimeTypeConsistent(detectedMimeType, extensionMimeType)
     ) {
       throw new StorageError(
         `文件内容类型 ${detectedMimeType} 与扩展名类型 ${extensionMimeType} 不匹配`,

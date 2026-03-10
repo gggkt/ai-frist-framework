@@ -31,6 +31,25 @@ export interface StorageConfig {
 
 let _config: StorageConfig | null = null;
 
+function validateStorageConfig(config: StorageConfig): void {
+  switch (config.provider) {
+    case 'local':
+      if (!config.local) throw new StorageError('provider=local 时必须提供 local 配置', 'INVALID_CONFIG');
+      return;
+    case 's3':
+      if (!config.s3) throw new StorageError('provider=s3 时必须提供 s3 配置', 'INVALID_CONFIG');
+      return;
+    case 'oss':
+      if (!config.oss) throw new StorageError('provider=oss 时必须提供 oss 配置', 'INVALID_CONFIG');
+      return;
+    case 'cos':
+      if (!config.cos) throw new StorageError('provider=cos 时必须提供 cos 配置', 'INVALID_CONFIG');
+      return;
+    default:
+      throw new StorageError(`不支持的存储提供商: ${(config as StorageConfig).provider}`, 'INVALID_CONFIG');
+  }
+}
+
 /**
  * 设置全局存储配置
  *
@@ -49,6 +68,7 @@ let _config: StorageConfig | null = null;
  * });
  */
 export function setStorageConfig(config: StorageConfig): void {
+  validateStorageConfig(config);
   _config = config;
 }
 

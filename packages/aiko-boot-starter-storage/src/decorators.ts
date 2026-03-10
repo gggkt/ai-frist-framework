@@ -63,8 +63,8 @@ export interface StorageFieldOptions {
  * })
  * export class ProductImageUploader {}
  */
-export function Uploadable(options: UploadableOptions = {}): <T extends { new (...args: any[]): any }>(target: T) => T {
-  return function <T extends { new (...args: any[]): any }>(target: T): T {
+export function Uploadable(options: UploadableOptions = {}): ClassDecorator {
+  return function (target: Function): void {
     Reflect.defineMetadata(
       UPLOADABLE_METADATA,
       {
@@ -76,7 +76,6 @@ export function Uploadable(options: UploadableOptions = {}): <T extends { new (.
       },
       target,
     );
-    return target;
   };
 }
 

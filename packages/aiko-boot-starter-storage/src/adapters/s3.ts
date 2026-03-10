@@ -31,6 +31,14 @@ export interface S3StorageConfig {
   forcePathStyle?: boolean;
   /** 自定义公开 Base URL（CDN 加速地址） */
   cdnBaseUrl?: string;
+  /**
+   * Bucket 是否允许对象 ACL
+   *
+   * 某些 Bucket（Bucket owner enforced）会禁用 ACL，此时若上传时传入 acl=public-read 会失败。
+   * 若你的 Bucket 禁用了 ACL，请显式设置为 false，并改用 Bucket Policy 控制公开访问。
+   * @default true
+   */
+  aclEnabled?: boolean;
 }
 
 export class S3StorageAdapter implements IStorageAdapter {
@@ -72,6 +80,13 @@ export class S3StorageAdapter implements IStorageAdapter {
     const key = options.key ?? buildKey(options.folder, randomUUID() + ext);
     const mimeType = options.contentType ?? getMimeType(fileName);
     const acl = options.acl;
+
+    if (acl === 'public-read' && this.config.aclEnabled === false) {
+      throw new StorageError(
+        '当前 S3 配置已禁用 ACL（aclEnabled=false），不能使用 acl=public-read。请改用 Bucket Policy 或移除 acl 参数。',
+        'INVALID_CONFIG',
+      );
+    }
 
     const client = await this.getClient();
     const { PutObjectCommand } = await import('@aws-sdk/client-s3');

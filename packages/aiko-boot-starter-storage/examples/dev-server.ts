@@ -30,7 +30,7 @@
  *    返回    : { status: "ok", uploadDir, baseUrl }
  */
 import 'reflect-metadata';
-import http from 'http';
+import {http} from 'http';
 import { join } from 'path';
 import { StorageService, LocalStorageAdapter, StorageError } from '../src/index.js';
 import type { ImagePreviewOptions } from '../src/index.js';

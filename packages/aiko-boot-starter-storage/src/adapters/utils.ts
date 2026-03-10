@@ -31,7 +31,16 @@ export function getMimeType(fileName: string): string {
 
 /**
  * 根据文件头（magic number）检测 MIME 类型
- * 仅覆盖常见图片与少量常见格式，无法识别时返回 undefined
+ *
+ * 当前仅支持以下类型检测：
+ * - image/png
+ * - image/jpeg
+ * - image/gif
+ * - image/webp
+ * - application/pdf
+ *
+ * 其他文件类型（如 docx/mp4/zip 等）会返回 undefined，
+ * 调用方应回退到扩展名推断或业务自定义策略。
  */
 export function detectMimeTypeFromBuffer(file: Buffer): string | undefined {
   if (file.length >= 8) {

@@ -32,6 +32,7 @@ import type { LocalStorageConfig } from './adapters/local.js';
 import type { S3StorageConfig } from './adapters/s3.js';
 import type { OssStorageConfig } from './adapters/oss.js';
 import type { CosStorageConfig } from './adapters/cos.js';
+import { STORAGE_INIT_ORDER, STORAGE_SHUTDOWN_ORDER } from './lifecycle-order.js';
 
 /**
  * 存储配置属性类
@@ -68,7 +69,7 @@ export class StorageAutoConfiguration {
   /**
    * 应用启动时初始化存储服务
    */
-  @OnApplicationReady({ order: -90 })
+  @OnApplicationReady({ order: STORAGE_INIT_ORDER })
   async initializeStorage(): Promise<void> {
     const config = this.buildStorageConfig();
     if (!config) {
@@ -84,7 +85,7 @@ export class StorageAutoConfiguration {
   /**
    * 应用关闭时重置存储配置
    */
-  @OnApplicationShutdown({ order: 110 })
+  @OnApplicationShutdown({ order: STORAGE_SHUTDOWN_ORDER })
   async closeStorage(): Promise<void> {
     console.log('📦 [aiko-storage] Resetting storage configuration...');
     resetStorageConfig();
@@ -123,6 +124,7 @@ export class StorageAutoConfiguration {
             endpoint: ConfigLoader.get<string>('storage.s3.endpoint'),
             forcePathStyle: ConfigLoader.get<boolean>('storage.s3.forcePathStyle'),
             cdnBaseUrl: ConfigLoader.get<string>('storage.s3.cdnBaseUrl'),
+            aclEnabled: ConfigLoader.get<boolean>('storage.s3.aclEnabled'),
           },
         };
       }

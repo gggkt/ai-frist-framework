@@ -144,7 +144,14 @@ export interface IStorageAdapter {
 export class StorageError extends Error {
   constructor(
     message: string,
-    readonly code: 'FILE_TOO_LARGE' | 'INVALID_TYPE' | 'UPLOAD_FAILED' | 'DELETE_FAILED' | 'CONFIG_MISSING' | 'ADAPTER_NOT_FOUND',
+    readonly code:
+      | 'FILE_TOO_LARGE'
+      | 'INVALID_TYPE'
+      | 'UPLOAD_FAILED'
+      | 'DELETE_FAILED'
+      | 'CONFIG_MISSING'
+      | 'INVALID_CONFIG'
+      | 'ADAPTER_NOT_FOUND',
     readonly cause?: unknown,
   ) {
     super(message);

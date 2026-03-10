@@ -68,5 +68,10 @@ export {
   StorageProperties,
 } from './auto-configuration.js';
 
+export {
+  STORAGE_INIT_ORDER,
+  STORAGE_SHUTDOWN_ORDER,
+} from './lifecycle-order.js';
+
 // Config Augmentation (扩展 @ai-partner-x/aiko-boot 的 AppConfig)
 import './config-augment.js';
