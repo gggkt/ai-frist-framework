@@ -12,7 +12,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Auto label based on OpenCode analysis
+      - name: Auto label based on content analysis
         uses: actions/github-script@v7
         with:
           script: |
@@ -21,35 +21,42 @@ jobs:
             const body = issue.body?.toLowerCase() || '';
             const labels = [];
 
-            // 根据标题和正文内容自动分类
-            if (title.includes('bug') || title.includes('错误') || title.includes('失败') || title.includes('crash')) {
-              labels.push('bug');
-            } else if (title.includes('feature') || title.includes('功能') || title.includes('添加') || title.includes('支持')) {
-              labels.push('feature');
-            } else if (title.includes('question') || title.includes('问题') || title.includes('询问') || title.includes('怎么')) {
-              labels.push('question');
-            } else if (title.includes('doc') || title.includes('文档') || title.includes('说明')) {
-              labels.push('documentation');
+            // 服务端 Starter 组件
+            if (
+              title.includes('starter') ||
+              body.includes('aiko-boot-starter-') ||
+              body.includes('starter-')
+            ) {
+              labels.push('服务端 starter 组件');
             }
 
-            // 根据模块分类
-            if (title.includes('web') || body.includes('aiko-boot-starter-web')) {
-              labels.push('module: web');
-            } else if (title.includes('orm') || body.includes('aiko-boot-starter-orm')) {
-              labels.push('module: orm');
-            } else if (title.includes('core') || body.includes('aiko-boot')) {
-              labels.push('module: core');
+            // 服务端基础组件
+            if (
+              title.includes('aiko-boot') && !title.includes('starter') ||
+              body.includes('packages/aiko-boot/') && !body.includes('starter') ||
+              title.includes('核心') ||
+              title.includes('core') ||
+              title.includes('基础组件')
+            ) {
+              labels.push('服务端基础组件');
             }
 
-            // 根据关键词分类
-            if (body.includes('数据库') || body.includes('mysql') || body.includes('postgresql')) {
-              labels.push('database');
+            // example-admin
+            if (
+              title.includes('admin') ||
+              body.includes('example-admin') ||
+              body.includes('app/admin')
+            ) {
+              labels.push('example-admin');
             }
-            if (body.includes('日志') || body.includes('log')) {
-              labels.push('logging');
-            }
-            if (body.includes('配置') || body.includes('config')) {
-              labels.push('configuration');
+
+            // example-mobile
+            if (
+              title.includes('mobile') ||
+              body.includes('example-mobile') ||
+              body.includes('app/mobile')
+            ) {
+              labels.push('example-mobile');
             }
 
             // 如果没有匹配到任何标签，添加 needs-review
@@ -66,55 +73,4 @@ jobs:
                 labels: labels
               });
               console.log(`Added labels: ${labels.join(', ')}`);
-            }
-
-            // 设置 Issue Type (使用 GraphQL API)
-            const issueType = labels.includes('bug') ? 'Bug' : 
-                             labels.includes('feature') ? 'Feature' : 
-                             labels.includes('question') ? 'Task' : null;
-            
-            if (issueType) {
-              try {
-                // 获取 Issue Type ID
-                const typeQuery = `
-                  query {
-                    repository(owner: "${context.repo.owner}", name: "${context.repo.repo}") {
-                      issueTypes(first: 10) {
-                        nodes {
-                          id
-                          name
-                        }
-                      }
-                    }
-                  }
-                `;
-                
-                const typeResult = await github.graphql(typeQuery);
-                const issueTypes = typeResult.repository.issueTypes.nodes;
-                const targetType = issueTypes.find(t => t.name === issueType);
-                
-                if (targetType) {
-                  // 设置 Issue Type
-                  const mutation = `
-                    mutation {
-                      updateIssueIssueType(input: {
-                        issueId: "${issue.node_id}",
-                        issueTypeId: "${targetType.id}"
-                      }) {
-                        issue {
-                          id
-                          issueType {
-                            name
-                          }
-                        }
-                      }
-                    }
-                  `;
-                  
-                  await github.graphql(mutation);
-                  console.log(`Set Issue Type to: ${issueType}`);
-                }
-              } catch (error) {
-                console.log(`Could not set Issue Type: ${error.message}`);
-              }
             }
