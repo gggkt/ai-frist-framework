@@ -23,5 +23,5 @@ export interface AsyncOptions {
    * @param error   - The thrown error
    * @param methodName - The name of the decorated method
    */
-  onError?: (error: unknown, methodName: string) => void;
+  onError?: (error: unknown, methodName: string) => void | Promise<void>;
 }

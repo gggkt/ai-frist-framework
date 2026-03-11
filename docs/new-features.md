@@ -127,7 +127,7 @@ const uploadMiddleware = (Object.keys(partParams).length > 0 && multipart !== un
 ```typescript
 export default {
   server: {
-    port: 3001,
+    port: 3003,
     servlet: { contextPath: '/api' },
   },
   spring: {
@@ -185,10 +185,10 @@ export class UploadController {
 
 ```bash
 # 单文件
-curl -X POST http://localhost:3001/api/upload/single -F "file=@photo.png"
+curl -X POST http://localhost:3003/api/upload/single -F "file=@photo.png"
 
 # 多文件
-curl -X POST http://localhost:3001/api/upload/multi \
+curl -X POST http://localhost:3003/api/upload/multi \
   -F "document=@doc.pdf" -F "thumbnail=@thumb.png"
 ```
 
@@ -296,10 +296,10 @@ export class FormController {
 
 ```bash
 # URL 查询参数 → @ModelAttribute
-curl "http://localhost:3001/api/form/search?keyword=alice&page=2"
+curl "http://localhost:3003/api/form/search?keyword=alice&page=2"
 
 # form-urlencoded body → @ModelAttribute
-curl -X POST http://localhost:3001/api/form/register \
+curl -X POST http://localhost:3003/api/form/register \
   -d "username=alice&email=alice@example.com"
 ```
 
@@ -340,8 +340,8 @@ export class FormController {
 ```
 
 ```bash
-curl http://localhost:3001/api/form/profile
-curl http://localhost:3001/api/form/tenant-info
+curl http://localhost:3003/api/form/profile
+curl http://localhost:3003/api/form/tenant-info
 ```
 
 ---
@@ -526,7 +526,7 @@ export class UserController {
 #### 3. `curl` 测试
 
 ```bash
-curl http://localhost:3001/api/users/1
+curl http://localhost:3003/api/users/1
 ```
 
 #### 支持的 `pattern` token 速查
@@ -718,7 +718,7 @@ pnpm --filter "@ai-partner-x/*" build
 # 3. 进入示例目录并启动
 cd app/examples/api-extend
 pnpm dev
-# → http://localhost:3001
+# → http://localhost:3003
 ```
 
 ### 示例配置文件（`app.config.ts`）
@@ -728,7 +728,7 @@ pnpm dev
 export default {
   logging: { level: { root: 'debug' } },
   server: {
-    port: 3001,
+    port: 3003,
     servlet: { contextPath: '/api' },
     shutdown: 'graceful',
   },
