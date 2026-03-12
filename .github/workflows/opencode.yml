@@ -245,12 +245,16 @@ jobs:
               
               // 只在 PR 刚打开时提示
               if (context.eventName === 'pull_request') {
-                await github.rest.issues.createComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: prNumber,
-                  body: `⚠️ **PR 规模过大（${fileCount} 个文件）**\n\n自动代码审查已跳过，建议：\n1. 拆分为更小的 PR\n2. 或使用 \`/oc review\` 手动触发审查（可能需要较长时间）`
-                });
+                try {
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: prNumber,
+                    body: `⚠️ **PR 规模过大（${fileCount} 个文件）**\n\n自动代码审查已跳过，建议：\n1. 拆分为更小的 PR\n2. 或使用 \`/oc review\` 手动触发审查（可能需要较长时间）`
+                  });
+                } catch (error) {
+                  core.warning(`Skip comment due to permission limits: ${error?.message || error}`);
+                }
               }
             } else {
               core.setOutput('should_skip', 'false');
