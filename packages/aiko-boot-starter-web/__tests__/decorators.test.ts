@@ -4,7 +4,7 @@
  */
 
 import { describe, test, expect, beforeEach, vi } from 'vitest';
-import { formatDate, applyJsonFormat, JsonFormatShape } from '../src/decorators';
+import { formatDate, applyJsonFormat } from '../src/decorators';
 
 describe('formatDate', () => {
   test('应该正确格式化日期（默认时区）', () => {
