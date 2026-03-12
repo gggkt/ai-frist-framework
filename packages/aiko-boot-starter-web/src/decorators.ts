@@ -409,9 +409,17 @@ export interface JsonFormatOptions {
   /**
    * IANA timezone identifier or fixed-offset string.
    * When omitted the local (process) timezone is used.
+   * 
+   * Supported formats:
+   *   - IANA timezone identifiers: 'UTC', 'Asia/Shanghai', 'America/New_York'
+   *   - Fixed offset formats: 'GMT+8', 'GMT+08:00', 'UTC-5', 'UTC-05:00'
+   * 
    * @example 'UTC'
    * @example 'Asia/Shanghai'
    * @example 'America/New_York'
+   * @example 'GMT+8'
+   * @example 'GMT+08:00'
+   * @example 'UTC-05:00'
    */
   timezone?: string;
   /**
@@ -468,6 +476,10 @@ export function getJsonFormatFields(target: object): Record<string, JsonFormatOp
  *   mm    2-digit minute     m    1-digit minute
  *   ss    2-digit second     s    1-digit second
  *   SSS   3-digit millis     S    unpadded millis (0-999)
+ * 
+ * Timezone support:
+ *   - IANA timezone identifiers: 'UTC', 'Asia/Shanghai', 'America/New_York'
+ *   - Fixed offset formats: 'GMT+8', 'GMT+08:00', 'UTC-5', 'UTC-05:00'
  */
 export function formatDate(date: Date, pattern: string, timezone?: string): string {
   const pad = (n: number, len = 2) => String(n).padStart(len, '0');
@@ -476,24 +488,45 @@ export function formatDate(date: Date, pattern: string, timezone?: string): stri
 
   if (timezone) {
     try {
-      const parts: Record<string, string> = {};
-      new Intl.DateTimeFormat('en-US', {
-        timeZone: timezone,
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hourCycle: 'h23', // Ensure hours are in 0–23 range to avoid 24:00 edge cases
-      }).formatToParts(date).forEach(p => { parts[p.type] = p.value; });
-      y  = parseInt(parts.year, 10);
-      mo = parseInt(parts.month, 10);
-      d  = parseInt(parts.day, 10);
-      h  = parseInt(parts.hour, 10);
-      mi = parseInt(parts.minute, 10);
-      s  = parseInt(parts.second, 10);
-      ms = date.getMilliseconds(); // Milliseconds are sub-second precision; timezones offset by whole minutes only, so this value is timezone-independent
+      // 支持 GMT/UTC±HH 或 GMT/UTC±HH:MM 格式的固定时区偏移量
+      // 匹配 GMT+8, GMT+08, GMT+08:00, UTC-5, UTC-05, UTC-05:00 等格式
+      const offsetMatch = timezone.match(/^(?:GMT|UTC)([+-])(\d{1,2})(?::?(\d{2}))?$/i);
+      if (offsetMatch) {
+        const sign = offsetMatch[1] === '+' ? 1 : -1;
+        const hours = parseInt(offsetMatch[2], 10);
+        const minutes = offsetMatch[3] ? parseInt(offsetMatch[3], 10) : 0;
+        const offsetMs = sign * (hours * 3600 + minutes * 60) * 1000;
+        
+        // 应用时区偏移
+        const adjustedDate = new Date(date.getTime() + offsetMs);
+        y = adjustedDate.getUTCFullYear();
+        mo = adjustedDate.getUTCMonth() + 1;
+        d = adjustedDate.getUTCDate();
+        h = adjustedDate.getUTCHours();
+        mi = adjustedDate.getUTCMinutes();
+        s = adjustedDate.getUTCSeconds();
+        ms = adjustedDate.getUTCMilliseconds();
+      } else {
+        // 使用 Intl.DateTimeFormat 处理 IANA 时区标识符
+        const parts: Record<string, string> = {};
+        new Intl.DateTimeFormat('en-US', {
+          timeZone: timezone,
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hourCycle: 'h23',
+        }).formatToParts(date).forEach(p => { parts[p.type] = p.value; });
+        y  = parseInt(parts.year, 10);
+        mo = parseInt(parts.month, 10);
+        d  = parseInt(parts.day, 10);
+        h  = parseInt(parts.hour, 10);
+        mi = parseInt(parts.minute, 10);
+        s  = parseInt(parts.second, 10);
+        ms = date.getMilliseconds();
+      }
     } catch {
       // Fallback to local time if the timezone string is unrecognised
       y = date.getFullYear(); mo = date.getMonth() + 1; d = date.getDate();
@@ -520,7 +553,7 @@ export function formatDate(date: Date, pattern: string, timezone?: string): stri
     ss:   pad(s),
     s:    String(s),
     SSS:  pad(ms, 3),
-    S:    String(ms),
+    S:    String(ms).padStart(1, '0'),
   };
 
   let result = '';
