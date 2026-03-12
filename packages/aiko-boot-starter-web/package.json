@@ -60,5 +60,9 @@
     "controller",
     "decorators",
     "typescript"
-  ]
+  ],
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "public"
+  }
 }
