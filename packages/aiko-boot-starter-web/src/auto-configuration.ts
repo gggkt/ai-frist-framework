@@ -46,6 +46,9 @@ import { ExceptionHandlerRegistry, createErrorHandler } from '@ai-partner-x/aiko
  * 
  * 对应 Spring Boot 的 spring.servlet.multipart.* 配置
  * @see https://docs.spring.io/spring-boot/docs/current/reference/html/application-properties.html#appendix.application-properties.web
+ * 
+ * 注意：框架不支持整个 multipart 请求的大小限制（类似 Spring Boot 的 spring.servlet.multipart.max-request-size），
+ * 如需限制请在应用层通过 Express 中间件（如 body-parser 的 size 选项）自行实现。
  */
 @ConfigurationProperties('spring.servlet.multipart')
 export class MultipartProperties {

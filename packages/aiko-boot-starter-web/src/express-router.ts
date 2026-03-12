@@ -50,9 +50,7 @@ export interface ExpressRouterOptions {
    * 文件上传限制（由 spring.servlet.multipart.* 配置驱动）
    * 未设置（undefined）时视为 multipart 功能已禁用，含 @RequestPart 的路由不会挂载 multer 中间件。
    * 单个文件大小限制（maxFileSize）由 multer limits.fileSize 控制。
-   * 整个 multipart 请求的大小限制不由本 Router 自动配置；
-   * 如需限制请在应用层通过 multer/busboy limits 或专用中间件自行设置。
-   * 注意：server.maxHttpPostSize / express.json() 只影响 JSON/urlencoded 请求体，对 multipart 不起作用。
+   * 注意：框架不支持整个 multipart 请求的大小限制，如需限制请在应用层通过 Express 中间件自行实现。
    */
   multipart?: {
     /** 单个文件最大字节数 (spring.servlet.multipart.max-file-size) */
