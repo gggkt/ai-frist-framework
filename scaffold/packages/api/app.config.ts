@@ -21,4 +21,11 @@ export default {
     enabled: true,
     failFast: false,
   },
+  storage: {
+    provider: 'local',
+    local: {
+      uploadDir: './uploads',
+      baseUrl: 'http://localhost:3001/api/uploads',
+    },
+  },
 } satisfies AppConfig;
