@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import { RestController, PostMapping, DeleteMapping, GetMapping, RequestParam } from '@ai-partner-x/aiko-boot-starter-web';
 import { Autowired } from '@ai-partner-x/aiko-boot';
 import { StorageService, type UploadResult } from '@ai-partner-x/aiko-boot-starter-storage';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 
 /**
  * 文件上传控制器
@@ -15,6 +15,16 @@ export class UploadController {
   private storageService!: StorageService;
 
   /**
+   * 校验 folder 参数，防止路径遍历攻击（如 ../../etc/passwd）。
+   * 只允许字母、数字、连字符、下划线和单个斜杠分隔的目录名。
+   */
+  private validateFolder(folder: string): void {
+    if (!/^[a-zA-Z0-9_\-]+(\/[a-zA-Z0-9_\-]+)*$/.test(folder)) {
+      throw new Error(`Invalid folder name: "${folder}". Only alphanumeric characters, hyphens, underscores and forward slashes are allowed.`);
+    }
+  }
+
+  /**
    * 上传单个文件
    *
    * @example
@@ -23,19 +33,27 @@ export class UploadController {
    *   -F "folder=images"
    */
   @PostMapping('/')
-  async upload(req: Request): Promise<UploadResult> {
-    const file = (req as Request & { file?: Express.Multer.File }).file;
-    if (!file) {
-      throw new Error('No file uploaded');
+  async upload(req: Request, res: Response): Promise<UploadResult | { error: string }> {
+    try {
+      const file = (req as Request & { file?: Express.Multer.File }).file;
+      if (!file) {
+        res.status(400);
+        return { error: 'No file uploaded' };
+      }
+
+      const folder = (req.body?.folder as string) || 'uploads';
+      this.validateFolder(folder);
+
+      return await this.storageService.upload(file.buffer, file.originalname, {
+        folder,
+        maxSize: 10 * 1024 * 1024, // 10MB
+        allowedTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+      });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Upload failed';
+      res.status(400);
+      return { error: message };
     }
-
-    const folder = (req.body?.folder as string) || 'uploads';
-
-    return this.storageService.upload(file.buffer, file.originalname, {
-      folder,
-      maxSize: 10 * 1024 * 1024, // 10MB
-      allowedTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
-    });
   }
 
   /**
@@ -48,23 +66,31 @@ export class UploadController {
    *   -F "folder=images"
    */
   @PostMapping('/multiple')
-  async uploadMultiple(req: Request): Promise<UploadResult[]> {
-    const files = (req as Request & { files?: Express.Multer.File[] }).files;
-    if (!files || files.length === 0) {
-      throw new Error('No files uploaded');
+  async uploadMultiple(req: Request, res: Response): Promise<UploadResult[] | { error: string }> {
+    try {
+      const files = (req as Request & { files?: Express.Multer.File[] }).files;
+      if (!files || files.length === 0) {
+        res.status(400);
+        return { error: 'No files uploaded' };
+      }
+
+      const folder = (req.body?.folder as string) || 'uploads';
+      this.validateFolder(folder);
+
+      return await Promise.all(
+        files.map((file) =>
+          this.storageService.upload(file.buffer, file.originalname, {
+            folder,
+            maxSize: 10 * 1024 * 1024, // 10MB
+            allowedTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+          }),
+        ),
+      );
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Upload failed';
+      res.status(400);
+      return { error: message };
     }
-
-    const folder = (req.body?.folder as string) || 'uploads';
-
-    return Promise.all(
-      files.map((file) =>
-        this.storageService.upload(file.buffer, file.originalname, {
-          folder,
-          maxSize: 10 * 1024 * 1024, // 10MB
-          allowedTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
-        }),
-      ),
-    );
   }
 
   /**
@@ -74,9 +100,15 @@ export class UploadController {
    * curl -X DELETE "http://localhost:3003/api/upload?key=images/xxx.png"
    */
   @DeleteMapping('/')
-  async delete(@RequestParam('key') key: string): Promise<{ success: boolean }> {
-    await this.storageService.delete(key);
-    return { success: true };
+  async delete(@RequestParam('key') key: string, res: Response): Promise<{ success: boolean } | { error: string }> {
+    try {
+      await this.storageService.delete(key);
+      return { success: true };
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Delete failed';
+      res.status(500);
+      return { error: message };
+    }
   }
 
   /**
@@ -86,9 +118,15 @@ export class UploadController {
    * curl "http://localhost:3003/api/upload/url?key=images/xxx.png"
    */
   @GetMapping('/url')
-  async getUrl(@RequestParam('key') key: string): Promise<{ url: string }> {
-    const url = await this.storageService.getUrl(key);
-    return { url };
+  async getUrl(@RequestParam('key') key: string, res: Response): Promise<{ url: string } | { error: string }> {
+    try {
+      const url = await this.storageService.getUrl(key);
+      return { url };
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to get URL';
+      res.status(500);
+      return { error: message };
+    }
   }
 
   /**
@@ -100,15 +138,22 @@ export class UploadController {
   @GetMapping('/preview')
   async getPreviewUrl(
     @RequestParam('key') key: string,
+    res: Response,
     @RequestParam('width') width?: string,
     @RequestParam('height') height?: string,
     @RequestParam('quality') quality?: string,
-  ): Promise<{ url: string }> {
-    const url = await this.storageService.getPreviewUrl(key, {
-      width: width ? parseInt(width, 10) : undefined,
-      height: height ? parseInt(height, 10) : undefined,
-      quality: quality ? parseInt(quality, 10) : undefined,
-    });
-    return { url };
+  ): Promise<{ url: string } | { error: string }> {
+    try {
+      const url = await this.storageService.getPreviewUrl(key, {
+        width: width ? parseInt(width, 10) : undefined,
+        height: height ? parseInt(height, 10) : undefined,
+        quality: quality ? parseInt(quality, 10) : undefined,
+      });
+      return { url };
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to get preview URL';
+      res.status(500);
+      return { error: message };
+    }
   }
 }
