@@ -21,6 +21,7 @@ import {
   PostMapping,
   ModelAttribute,
   RequestAttribute,
+  convertModelAttributes,
 } from '@ai-partner-x/aiko-boot-starter-web';
 
 /** 搜索参数 DTO（由 @ModelAttribute 从 query string 绑定） */
@@ -59,15 +60,17 @@ export class FormController {
   search(
     @ModelAttribute() query: SearchDto,
   ): object {
+    const parsed = convertModelAttributes(query);
+
     return {
       received: query,
       parsed: {
-        keyword: query.keyword ?? '(none)',
-        page: Number(query.page ?? 1),
-        size: Number(query.size ?? 10),
-        category: query.category ?? '(all)',
+        keyword: typeof parsed.keyword === 'string' ? parsed.keyword : '(none)',
+        page: typeof parsed.page === 'number' ? parsed.page : 1,
+        size: typeof parsed.size === 'number' ? parsed.size : 10,
+        category: typeof parsed.category === 'string' ? parsed.category : '(all)',
       },
-      message: '✅ Query params bound via @ModelAttribute (req.query + req.body merged)',
+      message: '✅ Query params bound via @ModelAttribute + convertModelAttributes',
     };
   }
 

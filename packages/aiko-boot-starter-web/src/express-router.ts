@@ -28,7 +28,7 @@ import {
   applyJsonFormat,
   type MultipartFile,
 } from './decorators.js';
-import { Router, IRouter } from 'express';
+import { Router, IRouter, type Response as ExpressResponse } from 'express';
 import { Container, injectAutowiredProperties } from '@ai-partner-x/aiko-boot/di/server';
 import multer from 'multer';
 import { writeFile } from 'fs/promises';
@@ -75,12 +75,7 @@ type AnyRequest = {
   [key: string]: any;
 };
 
-type AnyResponse = {
-  json: (data: any) => AnyResponse;
-  status: (code: number) => AnyResponse;
-  set?: (key: string, value: string) => AnyResponse;
-  send?: (body?: any) => AnyResponse;
-};
+type AnyResponse = Pick<ExpressResponse, 'json' | 'status' | 'set' | 'send'>;
 
 type NextFn = (err?: any) => void;
 
