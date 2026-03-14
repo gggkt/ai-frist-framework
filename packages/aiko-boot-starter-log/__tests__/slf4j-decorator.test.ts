@@ -461,4 +461,126 @@ describe('@Slf4j 装饰器单元测试', () => {
       expect(serviceA.logger).not.toBe(serviceB.logger);
     });
   });
+
+  describe('属性冲突保护测试', () => {
+    it('应该避免覆盖类已有的 log 属性', () => {
+      // 模拟 console.warn
+      const originalWarn = console.warn;
+      const warnings: string[] = [];
+      console.warn = (...args) => {
+        warnings.push(args.join(' '));
+      };
+
+      try {
+        // 类已经定义了 log 属性
+        @Slf4j({ name: 'ClassWithExistingLog', level: 'info' })
+        class ClassWithExistingLog {
+          // 类已有的 log 方法
+          log(message: string) {
+            return `Original: ${message}`;
+          }
+          
+          testMethod() {
+            return this.log('test');
+          }
+        }
+
+        const instance = new ClassWithExistingLog();
+        
+        // 应该保留原有的 log 方法
+        expect(typeof instance.log).toBe('function');
+        expect(instance.testMethod()).toBe('Original: test');
+        
+        // 应该发出警告（在开发环境下）
+        if (process.env.NODE_ENV === 'development') {
+          expect(warnings.length).toBeGreaterThan(0);
+          expect(warnings[0]).toContain('already has a property named');
+        }
+      } finally {
+        console.warn = originalWarn;
+      }
+    });
+
+    it('应该支持自定义日志方法名称', () => {
+      @Slf4j({ name: 'CustomLogMethod', level: 'debug', logMethodName: 'customLog' })
+      class CustomLogMethodClass {
+        testMethod() {
+          this.customLog('测试消息', { meta: 'data' });
+          return 'test';
+        }
+      }
+
+      const instance = new CustomLogMethodClass();
+      
+      // 应该添加自定义名称的日志方法
+      expect(instance).toHaveProperty('customLog');
+      expect(typeof instance.customLog).toBe('function');
+      
+      // 原有的 log 属性不应该被添加
+      expect(instance).not.toHaveProperty('log');
+    });
+
+    it('应该处理类已有 log 属性但使用自定义方法名的情况', () => {
+      @Slf4j({ name: 'ClassWithLogAndCustom', level: 'warn', logMethodName: 'loggerLog' })
+      class ClassWithLogAndCustom {
+        // 类已有的 log 方法
+        log(message: string) {
+          return `Existing log: ${message}`;
+        }
+        
+        testMethod() {
+          // 应该能调用原有的 log 方法
+          const result = this.log('test');
+          // 也应该能调用装饰器添加的 loggerLog 方法
+          expect(this).toHaveProperty('loggerLog');
+          return result;
+        }
+      }
+
+      const instance = new ClassWithLogAndCustom();
+      
+      // 应该保留原有的 log 方法
+      expect(instance.log('test')).toBe('Existing log: test');
+      
+      // 应该添加自定义的 loggerLog 方法
+      expect(instance).toHaveProperty('loggerLog');
+      expect(typeof instance.loggerLog).toBe('function');
+      
+      // 测试方法应该正常工作
+      expect(instance.testMethod()).toBe('Existing log: test');
+    });
+
+    it('应该处理继承场景中的属性冲突', () => {
+      // 父类有 log 属性
+      class ParentWithLog {
+        log(message: string) {
+          return `Parent log: ${message}`;
+        }
+      }
+
+      // 子类应用装饰器
+      @Slf4j({ name: 'ChildClass', level: 'error', logMethodName: 'errorLog' })
+      class ChildClass extends ParentWithLog {
+        testMethod() {
+          // 应该能调用父类的 log 方法
+          const parentResult = this.log('from child');
+          // 也应该能调用装饰器添加的 errorLog 方法
+          expect(this).toHaveProperty('errorLog');
+          return parentResult;
+        }
+      }
+
+      const instance = new ChildClass();
+      
+      // 应该继承父类的 log 方法
+      expect(instance.log('test')).toBe('Parent log: test');
+      
+      // 应该添加自定义的 errorLog 方法
+      expect(instance).toHaveProperty('errorLog');
+      expect(typeof instance.errorLog).toBe('function');
+      
+      // 测试方法应该正常工作
+      expect(instance.testMethod()).toBe('Parent log: from child');
+    });
+  });
 });

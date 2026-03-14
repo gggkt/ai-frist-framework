@@ -4,7 +4,7 @@
 
 import { ILogger } from '../types';
 import { LoggerMetadata } from '../metadata/metadata';
-
+import { createConsoleLogger } from '../core/facade';
 /**
  * 启用装饰器支持
  * 需要在应用启动时调用，确保 reflect-metadata 已加载
@@ -53,7 +53,6 @@ export async function injectLogger(
       logger = facade.getLogger(loggerOrName, options);
     } catch (error) {
       // 如果导入失败，创建一个简单的控制台记录器
-      const { createConsoleLogger } = await import('../core/facade');
       logger = createConsoleLogger(loggerOrName);
     }
   } else {

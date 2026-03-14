@@ -154,8 +154,8 @@ function defaultArgsSerializer(args: any[]): any {
         return '[Object]';
       }
     }
-    // 对于基本类型（数字、字符串、布尔值），使用 JSON.stringify 进行序列化
-    return JSON.stringify(arg);
+    // 对于基本类型（数字、字符串、布尔值），直接返回原始值
+    return arg;
   });
 }
 

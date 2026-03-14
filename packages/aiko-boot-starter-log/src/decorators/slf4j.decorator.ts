@@ -17,6 +17,8 @@ export interface Slf4jOptions {
   enabled?: boolean;
   /** 自定义日志工厂选项 */
   factoryOptions?: Partial<LoggerFactoryOptions>;
+  /** 自定义日志方法名称（默认：'log'） */
+  logMethodName?: string;
 }
 
 /**
@@ -61,16 +63,36 @@ export function Slf4j(options?: Slf4jOptions): ClassDecorator {
     // 可选：为类添加便捷的日志方法
     if (options?.level) {
       const level = options.level.toLowerCase();
-      Object.defineProperty(target.prototype, 'log', {
-        value(message: string, meta?: any) {
-          const logger = this.logger;
-          if (logger && logger[level]) {
-            logger[level](message, meta);
-          }
-        },
-        enumerable: false,
-        configurable: true,
-      });
+      const logMethodName = options.logMethodName || 'log';
+      
+      // 检查目标原型是否已经存在同名属性（包括继承的属性）
+      const propertyDescriptor = Object.getOwnPropertyDescriptor(target.prototype, logMethodName);
+      const hasPropertyInChain = logMethodName in target.prototype;
+      
+      if (!propertyDescriptor && !hasPropertyInChain) {
+        // 原型上不存在该属性，可以安全添加
+        Object.defineProperty(target.prototype, logMethodName, {
+          value(message: string, meta?: any) {
+            const logger = this.logger;
+            if (logger && logger[level]) {
+              logger[level](message, meta);
+            }
+          },
+          enumerable: false,
+          configurable: true,
+          writable: true,
+        });
+      } else {
+        // 属性已经存在（无论是直接属性还是继承的），不进行覆盖
+        // 发出警告（开发环境）
+        if (process.env.NODE_ENV === 'development') {
+          console.warn(
+            `[Slf4j Decorator] Class ${className} already has a property named '${logMethodName}' ` +
+            `(in prototype chain). The decorator will not add a logging method with this name. ` +
+            `Consider using a different logMethodName option.`
+          );
+        }
+      }
     }
 
     return target; // 返回装饰后的类

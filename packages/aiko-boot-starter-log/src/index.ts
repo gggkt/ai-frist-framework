@@ -100,13 +100,5 @@ export const VERSION = '0.2.0';
 /** 库名 */
 export const LIBRARY_NAME = '@ai-partner-x/aiko-boot-starter-log';
 
-// 自动启用装饰器支持（可选）
-try {
-  import('./utils/decorator-utils').then(({ enableDecoratorSupport }) => {
-    enableDecoratorSupport();
-  }).catch(() => {
-    // 忽略错误，装饰器支持是可选的
-  });
-} catch {
-  // 忽略错误，装饰器支持是可选的
-}
+// 装饰器支持需要手动启用
+// 使用装饰器前请调用：import { enableDecoratorSupport } from './utils/decorator-utils'; enableDecoratorSupport();

@@ -5,44 +5,52 @@
 
 import { ILogger } from '../types';
 
+// 一次性检查 Reflect Metadata 支持状态
+const HAS_REFLECT_METADATA = typeof Reflect === 'object' && 
+  (Reflect as any).defineMetadata && 
+  (Reflect as any).getMetadata && 
+  (Reflect as any).hasMetadata && 
+  (Reflect as any).deleteMetadata;
+
 // 安全地访问 Reflect.metadata 方法
-const ReflectMetadata = {
+const ReflectMetadata = HAS_REFLECT_METADATA ? {
   defineMetadata: (metadataKey: any, metadataValue: any, target: any): void => {
-    if (!target) {
-      return;
-    }
-    if ((Reflect as any).defineMetadata) {
-      (Reflect as any).defineMetadata(metadataKey, metadataValue, target);
-    }
+    if (!target) return;
+    (Reflect as any).defineMetadata(metadataKey, metadataValue, target);
   },
   
   getMetadata: (metadataKey: any, target: any): any => {
-    if (!target) {
-      return undefined;
-    }
-    if ((Reflect as any).getMetadata) {
-      return (Reflect as any).getMetadata(metadataKey, target);
-    }
+    if (!target) return undefined;
+    return (Reflect as any).getMetadata(metadataKey, target);
+  },
+  
+  hasMetadata: (metadataKey: any, target: any): boolean => {
+    if (!target) return false;
+    return (Reflect as any).hasMetadata(metadataKey, target);
+  },
+  
+  deleteMetadata: (metadataKey: any, target: any): boolean => {
+    if (!target) return false;
+    return (Reflect as any).deleteMetadata(metadataKey, target);
+  }
+} : {
+  defineMetadata: (metadataKey: any, metadataValue: any, target: any): void => {
+    if (!target) return;
+    // 不支持 Reflect Metadata，静默失败
+  },
+  
+  getMetadata: (metadataKey: any, target: any): any => {
+    if (!target) return undefined;
     return undefined;
   },
   
   hasMetadata: (metadataKey: any, target: any): boolean => {
-    if (!target) {
-      return false;
-    }
-    if ((Reflect as any).hasMetadata) {
-      return (Reflect as any).hasMetadata(metadataKey, target);
-    }
+    if (!target) return false;
     return false;
   },
   
   deleteMetadata: (metadataKey: any, target: any): boolean => {
-    if (!target) {
-      return false;
-    }
-    if ((Reflect as any).deleteMetadata) {
-      return (Reflect as any).deleteMetadata(metadataKey, target);
-    }
+    if (!target) return false;
     return false;
   }
 };

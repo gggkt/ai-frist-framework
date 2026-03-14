@@ -100,7 +100,7 @@ describe('@Log 装饰器单元测试', () => {
       expect(mockLogger.info).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
-          args: expect.arrayContaining(['42', '"test"', JSON.stringify(testObj)]),
+          args: expect.arrayContaining([42, 'test', JSON.stringify(testObj)]),
         })
       );
     });
