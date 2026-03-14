@@ -8,7 +8,7 @@ import { RoleMenuMapper } from '../mapper/role-menu.mapper.js';
 import { MenuMapper } from '../mapper/menu.mapper.js';
 
 import type { LoginDto, LoginResultDto } from '../dto/auth.dto.js';
-import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../utils/jwt.util.js';
+import { signAccessToken, signRefreshToken, verifyRefreshToken, verifyAccessToken } from '../utils/jwt.util.js';
 
 @Service()
 export class AuthService {
@@ -74,6 +74,11 @@ export class AuthService {
       }
     }
     return { ...safeUser, roles, permissions };
+  }
+
+  async getCurrentUserByToken(accessToken: string): Promise<LoginResultDto['userInfo']> {
+    const payload = verifyAccessToken(accessToken);
+    return this.getUserInfo(payload.userId);
   }
 
   private async getUserRolesAndPermissions(userId: number) {
