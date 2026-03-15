@@ -13,7 +13,6 @@ const COPY_IGNORE = [
 
 /** Paths to skip when withBaseSystem is false (relative to scaffold root). */
 const SKIP_WHEN_BARE = [
-  'packages/shared-auth',
   'packages/api/src/controller/auth.controller.ts',
   'packages/api/src/service/auth.service.ts',
   'packages/api/src/dto/auth.dto.ts',
@@ -342,32 +341,4 @@ createRoot(document.getElementById('root')!).render(
 }
 `;
   await fs.writeFile(path.join(packagesDir, 'admin/src/App.tsx'), adminApp, 'utf-8');
-
-  const sharedAuthPkg = `@${scope}/shared-auth`;
-  const mobilePkgPath = path.join(packagesDir, 'mobile/package.json');
-  const mobilePkg = await fs.readJson(mobilePkgPath);
-  if (mobilePkg.dependencies) {
-    delete mobilePkg.dependencies[sharedAuthPkg];
-    mobilePkg.dependencies = Object.fromEntries(
-      Object.entries(mobilePkg.dependencies).filter(([k]) => k !== sharedAuthPkg)
-    );
-  }
-  await fs.writeJson(mobilePkgPath, mobilePkg, { spaces: 2 });
-
-  const adminPkgPath = path.join(packagesDir, 'admin/package.json');
-  const adminPkg = await fs.readJson(adminPkgPath);
-  if (adminPkg.dependencies) {
-    delete adminPkg.dependencies[sharedAuthPkg];
-    adminPkg.dependencies = Object.fromEntries(
-      Object.entries(adminPkg.dependencies).filter(([k]) => k !== sharedAuthPkg)
-    );
-  }
-  await fs.writeJson(adminPkgPath, adminPkg, { spaces: 2 });
-
-  const mobileVitePath = path.join(packagesDir, 'mobile/vite.config.ts');
-  if (await fs.pathExists(mobileVitePath)) {
-    let viteContent = await fs.readFile(mobileVitePath, 'utf-8');
-    viteContent = viteContent.replace(/\s*exclude:\s*\[\s*'@[^']+\/shared-auth'\s*\],?\s*/g, '\n');
-    await fs.writeFile(mobileVitePath, viteContent, 'utf-8');
-  }
 }

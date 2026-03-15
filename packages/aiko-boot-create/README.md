@@ -1,6 +1,6 @@
 # @ai-partner-x/aiko-boot-create
 
-CLI to create a new aiko-boot scaffold project (monorepo: api, admin, mobile, shared, optionally shared-auth).
+CLI to create a new aiko-boot scaffold project (monorepo: api, admin, mobile, shared, core).
 
 ## Usage
 
@@ -24,14 +24,14 @@ node packages/aiko-boot-create/dist/cli.js ./output-dir --name my-app --with-bas
 |--------|-------------|
 | `[targetDir]` | Target directory for the new project. Default: `<cwd>/<projectName>` |
 | `-n, --name <name>` | Project name, used as npm scope (e.g. `my-app` → `@my-app/*`) |
-| `--with-base-system` | Include base system: login, shared-auth, user/menu management (later) |
+| `--with-base-system` | Include base system: login (@scaffold/core), user/menu management (later) |
 | `--no-base-system` | Bare project without login/auth (default when not specified) |
 | `--template-dir <dir>` | Path to scaffold template. Default: `<cwd>/scaffold` |
 
 ## Base system vs bare
 
-- **With base system** (`--with-base-system`): Copies full scaffold including `shared-auth`, auth controller/service/dto, user entity/mapper, init-db with `sys_user`, login pages and protected routes in admin/mobile.
-- **Bare** (`--no-base-system`): Same monorepo structure (api, admin, mobile, shared) but no `shared-auth`, no auth-related files in api, no login UI or protected routes; shared has no `AUTH_STORAGE_KEY`.
+- **With base system** (`--with-base-system`): Copies full scaffold including auth (via @scaffold/core), auth controller/service/dto, user entity/mapper, init-db with `sys_user`, login pages and protected routes in admin/mobile.
+- **Bare** (`--no-base-system`): Same monorepo structure (api, admin, mobile, shared, core) but no auth-related files in api, no login UI or protected routes.
 
 ## After generation
 

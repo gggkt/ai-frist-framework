@@ -18,8 +18,6 @@ src/
 │   ├── index.ts
 │   ├── LoginPage.tsx
 │   └── HomePage.tsx
-├── providers/           # 全局 Context 包装
-│   └── AuthProviderWrapper.tsx
 ├── routes/              # 路由配置与守卫
 │   ├── index.tsx        # 路由表与 Router
 │   ├── routes.ts        # 路径常量
@@ -50,6 +48,5 @@ pnpm preview  # 预览构建结果
 
 ## 依赖
 
-- `@scaffold/shared-auth`：鉴权 Context
-- `@scaffold/api`：接口客户端
+- `@scaffold/core`：鉴权（与 admin 一致：appAuth + defaultAuthProvider）
 - `react-router-dom`：路由

@@ -13,7 +13,6 @@ export default defineConfig({
     port: 3002,
   },
   optimizeDeps: {
-    include: ['@scaffold/api/client', '@scaffold/shared'],
-    exclude: ['@scaffold/shared-auth'],
+    include: ['@scaffold/core'],
   },
 });

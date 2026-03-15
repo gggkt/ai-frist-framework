@@ -1,13 +1,16 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { AuthProviderWrapper } from '@scaffold/shared-auth';
+import { appAuth, defaultAuthProvider } from '@scaffold/core';
 import App from './App';
 import './app/globals.css';
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <AuthProviderWrapper>
+const container = document.getElementById('root')!;
+const root = createRoot(container);
+
+appAuth.setup(defaultAuthProvider).then(() => {
+  root.render(
+    <StrictMode>
       <App />
-    </AuthProviderWrapper>
-  </StrictMode>
-);
+    </StrictMode>
+  );
+});

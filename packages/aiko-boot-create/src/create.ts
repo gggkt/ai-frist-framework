@@ -90,7 +90,7 @@ export function createCommand(): void {
     .version('0.1.0')
     .argument('[projectNameOrPath]', 'Project name or path (e.g. my-app or ./my-app; default: prompt)')
     .option('-n, --name <name>', 'Project name (folder + npm scope, e.g. my-app)')
-    .option('--with-base-system', 'Include base system: login, shared-auth, user/menu management later')
+    .option('--with-base-system', 'Include base system: login (@scaffold/core), user/menu management later')
     .option('--no-base-system', 'Bare project without login/auth (default when not specified)')
     .option('--template-dir <dir>', 'Path to scaffold template (default: <cwd>/scaffold)')
     .action(async (targetDirArg: string | undefined, options: { name?: string; withBaseSystem?: boolean; baseSystem?: boolean; templateDir?: string }) => {
@@ -125,7 +125,7 @@ export function createCommand(): void {
         if (options.withBaseSystem === true) withBaseSystem = true;
         else if (options.baseSystem === false) withBaseSystem = false;
         else {
-          withBaseSystem = await promptConfirm('Include base system (login, shared-auth, user/menu management)?', false);
+          withBaseSystem = await promptConfirm('Include base system (login via @scaffold/core, user/menu management)?', false);
         }
       } else {
         projectName = projectName.trim();

@@ -1,16 +1,29 @@
 import { useState } from 'react';
-import { useAuth } from '@scaffold/shared-auth';
+import { appAuth } from '@scaffold/core';
+import type { NavigateFunction } from 'react-router-dom';
 
-export function LoginForm() {
+interface LoginFormProps {
+  onSuccessRedirectTo?: string;
+  navigate: NavigateFunction;
+}
+
+export function LoginForm({ onSuccessRedirectTo = '/', navigate }: LoginFormProps) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const { user, login, isLoading, error, setError } = useAuth();
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setIsSubmitting(true);
     try {
-      await login(username, password);
+      const result = await appAuth.login({ account: username, password });
+      if (result.success) {
+        navigate(result.redirectTo ?? onSuccessRedirectTo, { replace: true });
+      } else if (result.error) {
+        setError(result.error.message);
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : '登录失败';
       const isNetwork =
@@ -18,9 +31,9 @@ export function LoginForm() {
         msg.includes('Failed to fetch') ||
         msg.includes('NetworkError') ||
         msg.includes('CONNECTION_REFUSED');
-      if (isNetwork) {
-        setError('无法连接 API，请先在 scaffold 目录执行：pnpm dev:api');
-      }
+      setError(isNetwork ? '无法连接服务器，请稍后重试' : msg);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -57,20 +70,15 @@ export function LoginForm() {
           />
         </div>
         {error && <p className="text-sm text-red-600">{error}</p>}
-        {user && (
-          <p className="text-sm text-green-600">
-            登录成功：{user.username}（{user.email}）
-          </p>
-        )}
         <button
           type="submit"
-          disabled={isLoading}
+          disabled={isSubmitting}
           className="w-full rounded bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
         >
-          {isLoading ? '登录中...' : '登录'}
+          {isSubmitting ? '登录中...' : '登录'}
         </button>
       </form>
-      <p className="mt-4 text-xs text-gray-500">默认账号：admin / admin123</p>
+      <p className="mt-4 text-xs text-gray-500">本地演示：任意账号即可登录（由 @scaffold/core defaultAuthProvider 提供）</p>
     </div>
   );
 }
