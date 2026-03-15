@@ -76,14 +76,14 @@ export default {
     enabled: true,
     jwt: {
       secret: process.env.JWT_SECRET || (() => {
-        console.warn('⚠️ Using default JWT secret in development!');
-        return 'dev-only-secret';
+        console.warn('⚠️ Using default JWT secret in development! Please set JWT_SECRET environment variable in production.');
+        return 'ai-first-admin-secret-change-in-production';
       })(),
-      expiresIn: '1h',
+      expiresIn: '2h',
     },
     session: {
       secret: process.env.SESSION_SECRET || (() => {
-        console.warn('⚠️ Using default session secret in development!');
+        console.warn('⚠️ Using default session secret in development! Please set SESSION_SECRET environment variable in production.');
         return 'dev-only-session-secret';
       })(),
       maxAge: 86400000,
@@ -123,6 +123,9 @@ export default {
     publicPaths: [
       '/api/auth/login',
       '/api/auth/register',
+      '/api/auth/refresh',
+      '/api/auth/current',
+      '/api/auth/info',
       '/api/auth/github',
       '/api/auth/google',
       '/api/auth/github/callback',
