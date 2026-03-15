@@ -99,7 +99,12 @@ export class AuthService {
 
   async getCurrentUserByToken(accessToken: string): Promise<LoginResultDto['userInfo']> {
     const payload = this.verifyAccessToken(accessToken);
-    return this.getUserInfo(payload.userId);
+    // JWT payload uses 'sub' field for user ID
+    const userId = payload.sub || payload.userId;
+    if (!userId) {
+      throw new Error('Invalid token payload: missing user ID');
+    }
+    return this.getUserInfo(userId);
   }
 
   private async getUserRolesAndPermissions(userId: number) {
@@ -131,7 +136,7 @@ export class AuthService {
 
   // 临时JWT生成方法，应该与框架的JwtStrategy保持一致
   private generateAccessToken(user: any): string {
-    const secret = process.env.JWT_SECRET || 'ai-first-admin-secret-change-in-production';
+    const secret = process.env.JWT_SECRET || 'aiko-boot-admin-secret-2025-develop-change';
     const expiresIn = '2h';
 
     const payload = {
@@ -152,7 +157,7 @@ export class AuthService {
   }
 
   private verifyAccessToken(token: string): any {
-    const secret = process.env.JWT_SECRET || 'ai-first-admin-secret-change-in-production';
+    const secret = process.env.JWT_SECRET || 'aiko-boot-admin-secret-2025-develop-change';
     return jwt.verify(token, secret);
   }
 

@@ -77,7 +77,7 @@ export default {
     jwt: {
       secret: process.env.JWT_SECRET || (() => {
         console.warn('⚠️ Using default JWT secret in development! Please set JWT_SECRET environment variable in production.');
-        return 'ai-first-admin-secret-change-in-production';
+        return 'aiko-boot-admin-secret-2025-develop-change'; // 使用有效的JWT secret字符串
       })(),
       expiresIn: '2h',
     },

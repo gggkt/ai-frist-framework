@@ -27,32 +27,66 @@ export class AuthController {
   /**
    * 获取当前用户信息（基于 JWT token）
    *
-   * 从 Authorization Header 获取 token
+   * 支持三种 token 传递方式，按优先级顺序：
+   * 1. Authorization Header (Bearer token) - 推荐
+   * 2. Request Body - 兼容方式
+   * 3. URL Parameters - 备用方式
+   *
+   * 所有方式都支持 "Bearer <token>" 和 "<token>" 两种格式
    *
    * @example
    * ```bash
-   * # 使用 Header 传递 token（推荐方式）
-   * curl -H "Authorization: Bearer <token>" http://localhost:3001/api/auth/current
+   * # 方式1：使用 Authorization Header（推荐）
+   * curl -X POST http://localhost:3001/api/auth/current \
+   *   -H "Authorization: Bearer <token>"
    *
-   * # 兼容方式：从请求体传递 token（旧方式）
+   * # 方式2：使用请求体
    * curl -X POST http://localhost:3001/api/auth/current \
    *   -H "Content-Type: application/json" \
-   *   -d '{"token": "<token>"}'
+   *   -d '{"authorization": "Bearer <token>"}'
+   * # 或者不带 Bearer 前缀：
+   * curl -X POST http://localhost:3001/api/auth/current \
+   *   -H "Content-Type: application/json" \
+   *   -d '{"authorization": "<token>"}'
+   *
+   * # 方式3：使用 URL 参数
+   * curl -X POST "http://localhost:3001/api/auth/current?authorization=Bearer <token>"
+   * # 或者不带 Bearer 前缀：
+   * curl -X POST "http://localhost:3001/api/auth/current?authorization=<token>"
    * ```
    */
   @PostMapping('/current')
   async getCurrentUser(
-    @RequestHeader('authorization', false) authorization: string
+    @RequestHeader('authorization', false) headerAuthorization: string | undefined,
+    @RequestBody() body: any,
+    @RequestParam('authorization', false) paramAuthorization: string | undefined
   ): Promise<LoginResultDto['userInfo']> {
-    // 验证 token 是否存在
-    if (!authorization) {
-      throw new Error('Authorization header is required. Please provide: Bearer <token>');
-    }
+    let token = '';
 
-    // 支持 Authorization: Bearer <token> 格式
-    let token = authorization;
-    if (token.startsWith('Bearer ')) {
-      token = token.substring(7); // 移除 "Bearer " 前缀
+    // 优先级1：Authorization Header
+    if (headerAuthorization && typeof headerAuthorization === 'string') {
+      token = headerAuthorization;
+      if (token.startsWith('Bearer ')) {
+        token = token.substring(7); // 移除 "Bearer " 前缀
+      }
+    }
+    // 优先级2：Request Body
+    else if (body && typeof body === 'object' && body.authorization && typeof body.authorization === 'string') {
+      token = body.authorization;
+      if (token.startsWith('Bearer ')) {
+        token = token.substring(7); // 移除 "Bearer " 前缀
+      }
+    }
+    // 优先级3：URL Parameters
+    else if (paramAuthorization && typeof paramAuthorization === 'string') {
+      token = paramAuthorization;
+      if (token.startsWith('Bearer ')) {
+        token = token.substring(7); // 移除 "Bearer " 前缀
+      }
+    }
+    // 都没有找到 authorization
+    else {
+      throw new Error('Authorization is required. Please provide authorization via Authorization header, request body, or URL parameter');
     }
 
     return this.authService.getCurrentUserByToken(token);
