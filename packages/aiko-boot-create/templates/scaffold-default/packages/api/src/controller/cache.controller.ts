@@ -15,7 +15,7 @@ import type { CachePutDto } from '../dto/cache.dto.js';
  */
 @RestController({ path: '/cache' })
 export class CacheController {
-  @Autowired()
+  @Autowired(CacheService)
   private cacheService!: CacheService;
 
   private assertNonProduction(): void {
