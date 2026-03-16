@@ -29,16 +29,15 @@
         "clean": "rm -rf dist"
     },
     "dependencies": {
-        "bcrypt": "^5.1.1",
+        "bcryptjs": "^2.4.3",
         "jsonwebtoken": "^9.0.2",
         "passport": "^0.7.0",
         "passport-jwt": "^4.0.1",
         "passport-local": "^1.0.0",
         "passport-oauth2": "^1.8.0",
         "reflect-metadata": "^0.2.1",
-        "@ai-partner-x/aiko-boot": "workspace:*",
-        "@ai-partner-x/aiko-boot-starter-orm": "workspace:*",
-        "@ai-partner-x/aiko-boot-starter-web": "workspace:*"
+        "tslib": "^2.6.0",
+        "@ai-partner-x/aiko-boot": "workspace:*"
     },
     "peerDependencies": {
         "express": ">=4.0.0",
@@ -46,7 +45,7 @@
         "react": ">=17.0.0"
     },
     "devDependencies": {
-        "@types/bcrypt": "^5.0.2",
+        "@types/bcryptjs": "^2.4.6",
         "@types/express": "^4.17.21",
         "@types/jsonwebtoken": "^9.0.5",
         "@types/node": "^20.11.0",

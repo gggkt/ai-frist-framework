@@ -217,10 +217,13 @@ export class WebAutoConfiguration {
     // Body parser (JSON 请求体大小限制由 server.maxHttpPostSize 配置，默认 10mb)
     app.use(express.json({ limit: resolvedBodyLimit }));
 
+    // 注册到应用上下文（在路由注册之前，允许添加自定义中间件）
+    context.registerHttpServer(new ExpressHttpServer(app));
+
     // 收集 Controller 并注册路由
     const controllers = context.components.get('controller') || [];
     const validControllers = controllers.filter((c: Function) => getControllerMetadata(c)) as (new (...args: any[]) => any)[];
-    
+
     if (validControllers.length > 0) {
       app.use(createExpressRouter(validControllers, {
         prefix: contextPath,
@@ -237,9 +240,6 @@ export class WebAutoConfiguration {
     // 全局异常处理
     ExceptionHandlerRegistry.initialize();
     app.use(createErrorHandler());
-
-    // 注册到应用上下文
-    context.registerHttpServer(new ExpressHttpServer(app));
   }
 }
 

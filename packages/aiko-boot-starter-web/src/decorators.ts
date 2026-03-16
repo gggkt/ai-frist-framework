@@ -166,6 +166,17 @@ export function RequestParam(name?: string, required: boolean = false) {
 export const QueryParam = RequestParam;
 
 /**
+ * @RequestHeader - Extract HTTP header (like Spring Boot @RequestHeader)
+ */
+export function RequestHeader(name?: string, required: boolean = false) {
+  return function (target: any, propertyKey: string, parameterIndex: number) {
+    const requestHeaders = Reflect.getMetadata(REQUEST_HEADER_METADATA, target, propertyKey) || {};
+    requestHeaders[parameterIndex] = { name: name || 'header' + parameterIndex, required };
+    Reflect.defineMetadata(REQUEST_HEADER_METADATA, requestHeaders, target, propertyKey);
+  };
+}
+
+/**
  * @RequestBody - Extract request body (like Spring Boot @RequestBody)
  */
 export function RequestBody() {

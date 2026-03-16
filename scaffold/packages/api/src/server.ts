@@ -1,29 +1,38 @@
-/**
- * API Server - aiko-boot
- */
-import { createApp } from '@ai-partner-x/aiko-boot';
-import { getExpressApp } from '@ai-partner-x/aiko-boot-starter-web';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-import multer from 'multer';
+import 'reflect-metadata';
 import express from 'express';
+import { createApp } from '@ai-partner-x/aiko-boot';
+import { autoInit, getLogger } from '@ai-partner-x/aiko-boot-starter-log';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+autoInit();
+const logger = getLogger('server');
 
-const app = await createApp({ srcDir: __dirname });
+logger.info('Starting API server...');
 
-// 配置 multer 文件上传中间件
-const expressApp = getExpressApp();
-if (expressApp) {
-  const upload = multer({ storage: multer.memoryStorage() });
-  expressApp.post('/api/upload', upload.single('file'));
-  expressApp.post('/api/upload/multiple', upload.array('files', 10));
+import { join } from 'path';
 
-  // 配置静态文件服务（本地存储时访问上传的文件）
-  const uploadsDir = join(__dirname, '..', 'uploads');
-  expressApp.use('/api/uploads', express.static(uploadsDir));
+const projectDir = process.cwd();
+const srcDir = join(projectDir, 'src'); // Framework scans for controller/service/mapper relative to srcDir
+const configPath = projectDir; // configPath should point to the directory with node_modules
+const context = await createApp({ srcDir, configPath, verbose: true });
+
+if (!context) {
+  logger.warn('ApplicationContext not available');
+} else {
+  logger.info('Security enabled: ' + context.config.get('security.enabled', true));
 }
 
-await app.run();
-const port = app.config.get<number>('server.port', 3001);
-console.log(`\n📡 API: http://localhost:${port}/api\n`);
+const expressApp = await import('@ai-partner-x/aiko-boot-starter-web').then(m => m.getExpressApp());
+
+if (!expressApp) {
+  logger.error('Express app not available');
+  process.exit(1);
+}
+
+expressApp.use(express.json());
+
+const port = context.config.get('server.port', 3001);
+
+expressApp.listen(port, () => {
+  logger.info('API Server started on port ' + port);
+  console.log('📡 API: http://localhost:' + port + '/api');
+});

@@ -10,7 +10,7 @@ import { StorageService, type UploadResult } from '@ai-partner-x/aiko-boot-start
  */
 @RestController({ path: '/upload' })
 export class UploadController {
-  @Autowired()
+  @Autowired(StorageService)
   private storageService!: StorageService;
 
   /**
