@@ -56,6 +56,21 @@ pnpm install
 pnpm build
 ```
 
+## 📖 文档站点（VitePress）
+
+本仓库的文档源文件在 `docs/`，使用 VitePress 构建与预览：
+
+```bash
+# 本地开发（热更新）
+pnpm docs:dev
+
+# 构建静态站点（输出到 docs/.vitepress/dist）
+pnpm docs:build
+
+# 预览构建产物
+pnpm docs:preview
+```
+
 ### 运行示例项目
 
 ```bash
