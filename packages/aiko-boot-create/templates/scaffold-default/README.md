@@ -6,7 +6,7 @@
 
 ```bash
 # 1. 进入 scaffold 目录
-cd scaffold
+cd <your-project>
 
 # 2. 安装依赖（首次或依赖变更后）
 pnpm install
@@ -32,7 +32,7 @@ curl -X POST http://localhost:3001/api/auth/login \
 ## 目录结构
 
 ```
-scaffold/
+<your-project>/
 ├── packages/
 │   ├── api          # 后端 API（aiko-boot，当前实现用户登录）
 │   ├── shared       # 公共常量（API 基地址、存储 key 等）
@@ -52,7 +52,7 @@ scaffold/
 2. 之后所有开发、构建、启动都在 **scaffold 目录** 下完成，无需运行或构建仓库里其他项目（如 user-crud、其他 examples）。
 
 ```bash
-cd scaffold
+cd <your-project>
 pnpm init-db    # 首次
 pnpm dev        # 并行启动 api + admin + mobile
 ```
@@ -70,7 +70,7 @@ pnpm dev        # 并行启动 api + admin + mobile
 cd /path/to/ai-frist-framework
 pnpm install
 # 或在 scaffold 目录下
-cd scaffold && pnpm install
+cd <your-project> && pnpm install
 ```
 
 `init-db` 使用纯 JS 的 sql.js，无需编译。**运行 API 服务**（`pnpm dev:api`）时依赖 better-sqlite3 原生模块；若报错找不到 bindings，在**仓库根**执行（会进入 better-sqlite3 目录执行 `node-gyp rebuild`）：
@@ -84,7 +84,7 @@ pnpm run rebuild:sqlite
 依赖在仓库根安装完成后，在 **scaffold 目录** 下执行：
 
 ```bash
-cd scaffold
+cd <your-project>
 pnpm init-db    # 首次运行：初始化 SQLite 数据库
 pnpm dev        # 并行启动 api + admin + mobile
 ```
