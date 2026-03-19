@@ -70,7 +70,7 @@ export async function createScaffold(options: CreateOptions): Promise<void> {
   );
 
   if (!withBaseSystem) {
-    await writeBareTemplates(targetDir, scope);
+    await writeBareTemplates(targetDir);
   }
 
   // 再次替换，确保子包中 @ai-partner-x/* 均为 registry 版本（与根 pnpm.overrides 配合）
@@ -168,7 +168,7 @@ async function replaceScopeInFiles(dir: string, scope: string): Promise<void> {
 }
 
 /** Write bare (no auth) template files when withBaseSystem is false. */
-async function writeBareTemplates(targetDir: string, scope: string): Promise<void> {
+async function writeBareTemplates(targetDir: string): Promise<void> {
   const packagesDir = path.join(targetDir, 'packages');
 
   // api init-db

@@ -301,7 +301,7 @@ type AddRedisFeatureContext = {
 };
 
 async function addRedisFeatureToApi(ctx: AddRedisFeatureContext): Promise<void> {
-  const { apiDir, rootDir, logger } = ctx;
+  const { apiDir, rootDir: _rootDir, logger } = ctx;
 
   // 1) 更新 api package.json 依赖（cache starter + ioredis）
   const pkgPath = path.join(apiDir, 'package.json');
@@ -403,7 +403,7 @@ type AddMqFeatureContext = {
 };
 
 async function addMqFeatureToApi(ctx: AddMqFeatureContext): Promise<void> {
-  const { apiDir, rootDir, logger } = ctx;
+  const { apiDir, rootDir: _rootDir, logger } = ctx;
 
   // 1) 更新 api package.json 依赖（mq starter）
   const pkgPath = path.join(apiDir, 'package.json');

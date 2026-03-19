@@ -9,7 +9,7 @@ hero:
   actions:
     - theme: brand
       text: 快速开始（脚手架）
-      link: /guide/cli/aiko-boot-create
+      link: /guide/cli/aiko-boot-cli
     - theme: alt
       text: 插件开发指南
       link: /core/plugin-guide
@@ -29,7 +29,7 @@ features:
 ## 文档索引
 
 - **快速开始**
-  - [`aiko-boot` 脚手架 CLI（create / add-* / 运行时配置）](/guide/cli/aiko-boot-create)
+  - [`aiko-boot` 脚手架 CLI（create / add-* / 运行时配置）](/guide/cli/aiko-boot-cli)
 - **核心指南**
   - [核心能力与插件开发指南](/core/plugin-guide)
 - **开发指南**
