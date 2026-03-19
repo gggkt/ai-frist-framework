@@ -4,10 +4,10 @@ title: aiko-boot-create（脚手架 CLI）
 
 ## 简介
 
-`@ai-partner-x/aiko-boot-create` 是一个 CLI，用来**创建**和**扩展** Aiko Boot 脚手架工程（monorepo：`api` / `admin` / `mobile` / `core`）。
+`@ai-partner-x/aiko-boot-cli` 是一个 CLI，用来**创建**和**扩展** Aiko Boot 脚手架工程（monorepo：`api` / `admin` / `mobile` / `core`）。
 
-- **包路径**：`packages/aiko-boot-create/`
-- **bin**：`aiko-boot-create`
+- **包路径**：`packages/aiko-boot-cli/`
+- **bin**：`aiko-boot`
 - **Node 要求**：`>= 18`
 
 > 注意：当前源码里 `src/cli.ts` 的 `.version()` 与 `package.json` 的 `version` 可能不一致；文档以**已发布的包版本**行为为准。
@@ -17,23 +17,23 @@ title: aiko-boot-create（脚手架 CLI）
 如果已发布到 npm / GitHub Packages，可按你的发布方式安装：
 
 ```bash
-pnpm add -D @ai-partner-x/aiko-boot-create
+pnpm add -D @ai-partner-x/aiko-boot-cli
 ```
 
 也可以使用全局安装（可选）：
 
 ```bash
-pnpm add -g @ai-partner-x/aiko-boot-create
+pnpm add -g @ai-partner-x/aiko-boot-cli
 ```
 
 ## 基本用法
 
 ```bash
 # 在当前目录下新建一个完整脚手架（带 api/admin/mobile）
-aiko-boot-create init my-app --with-api --with-admin --with-mobile
+aiko-boot create my-app --with-api --with-admin --with-mobile
 
 # 使用 pnpm script（假设 package.json 里配置了）
-pnpm aiko-boot-create init my-app --with-api --with-admin --with-mobile
+pnpm aiko-boot create my-app --with-api --with-admin --with-mobile
 ```
 
 ## 子命令一览
@@ -44,14 +44,20 @@ pnpm aiko-boot-create init my-app --with-api --with-admin --with-mobile
 - **`add-feature`**：为指定后端服务增加特性组件（`redis` / `file` / `mq`）
 - **`list`**：查看当前脚手架配置（apps / apis / features）
 
+## 最佳实践：端口与运行时配置
+
+脚手架 CLI 的 `.aiko-boot.json` 用于记录 **工程清单**（apps/apis/features），便于生成根目录 scripts 与后续增量命令；而 **端口、API 地址、OAuth 回调等属于运行时配置**，应当由各工程的配置文件或环境变量控制（更利于不同环境切换与部署）。
+
+更完整的“创建/启动/配置”操作文档见 `docs/guide/cli/aiko-boot-create.md` 的“最佳实践：创建工程与运行时配置（端口 / 环境变量）”章节。
+
 下面分别说明各命令的参数与示例。
 
-## `init`：初始化脚手架
+## `create`：创建脚手架
 
 ### 语法
 
 ```bash
-aiko-boot-create init [targetDir] [options]
+aiko-boot create [targetDir] [options]
 ```
 
 ### 参数
@@ -74,10 +80,10 @@ aiko-boot-create init [targetDir] [options]
 
 ```bash
 # 当前目录下创建 test7 脚手架，并包含 api/admin/mobile
-aiko-boot-create init test7 --with-api --with-admin --with-mobile
+aiko-boot create test7 --with-api --with-admin --with-mobile
 
 # 只建空骨架
-aiko-boot-create init my-base --empty
+aiko-boot create my-base --empty
 ```
 
 ## `add-app`：新增前端应用（admin / mobile）
@@ -85,7 +91,7 @@ aiko-boot-create init my-base --empty
 ### 语法
 
 ```bash
-aiko-boot-create add-app [name] [options]
+aiko-boot add-app [name] [options]
 ```
 
 ### 参数
@@ -110,10 +116,10 @@ aiko-boot-create add-app [name] [options]
 
 ```bash
 # 在现有脚手架根目录新增 admin 应用
-aiko-boot-create add-app admin -t admin --root . --template-dir scaffold
+aiko-boot add-app admin -t admin --root . --template-dir scaffold
 
 # 新增 mobile-v2 应用
-aiko-boot-create add-app mobile-v2 -t mobile --template-dir scaffold
+aiko-boot add-app mobile-v2 -t mobile --template-dir scaffold
 ```
 
 ## `add-api`：新增后端服务
@@ -121,7 +127,7 @@ aiko-boot-create add-app mobile-v2 -t mobile --template-dir scaffold
 ### 语法
 
 ```bash
-aiko-boot-create add-api [name] [options]
+aiko-boot add-api [name] [options]
 ```
 
 ### 参数
@@ -139,7 +145,7 @@ aiko-boot-create add-api [name] [options]
 
 ```bash
 # 为当前脚手架增加一个 user-api 服务
-aiko-boot-create add-api user-api --db sqlite --template-dir scaffold
+aiko-boot add-api user-api --db sqlite --template-dir scaffold
 ```
 
 ## `add-feature`：为服务端增加特性组件
@@ -147,7 +153,7 @@ aiko-boot-create add-api user-api --db sqlite --template-dir scaffold
 ### 语法
 
 ```bash
-aiko-boot-create add-feature --service <service> --feature <feature> [options]
+aiko-boot add-feature --service <service> --feature <feature> [options]
 ```
 
 ### 选项
@@ -161,10 +167,10 @@ aiko-boot-create add-feature --service <service> --feature <feature> [options]
 
 ```bash
 # 给 api 增加 redis 支持
-aiko-boot-create add-feature --service api --feature redis
+aiko-boot add-feature --service api --feature redis
 
 # 给 user-api 增加 mq 支持（dry-run）
-aiko-boot-create add-feature --service user-api --feature mq --dry-run
+aiko-boot add-feature --service user-api --feature mq --dry-run
 ```
 
 ## `list`：查看当前脚手架配置
@@ -172,7 +178,7 @@ aiko-boot-create add-feature --service user-api --feature mq --dry-run
 ### 语法
 
 ```bash
-aiko-boot-create list [options]
+aiko-boot list [options]
 ```
 
 ### 选项
@@ -190,7 +196,7 @@ aiko-boot-create list [options]
 ### 示例
 
 ```bash
-aiko-boot-create list
-aiko-boot-create list --root ./test7
+aiko-boot list
+aiko-boot list --root ./test7
 ```
 
