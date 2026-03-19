@@ -13,6 +13,7 @@
   },
   "scripts": {
     "create": "node packages/aiko-boot-cli/dist/cli.js",
+    "bump:framework": "node ./scripts/bump-framework-version.mjs",
     "build": "pnpm -r build",
     "dev": "pnpm -r --parallel dev",
     "test": "pnpm -r test",

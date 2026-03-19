@@ -5,12 +5,9 @@ import {
   saveProjectConfig,
   type AikoProjectConfig,
 } from './project-config.js';
+import { getFrameworkRegistryVersion } from './framework-version.js';
 
 const FRAMEWORK_SCOPE = '@ai-partner-x/';
-// Use a semver range so newly published framework patch/minor versions are compatible.
-// You can override for testing by setting `AI_PARTNER_FRAMEWORK_VERSION`.
-const FRAMEWORK_REGISTRY_VERSION =
-  process.env.AI_PARTNER_FRAMEWORK_VERSION ?? '^0.1.3';
 
 export async function ensurePnpmWorkspace(rootDir: string): Promise<void> {
   const workspacePath = path.join(rootDir, 'pnpm-workspace.yaml');
@@ -132,6 +129,7 @@ export async function syncRootPackageJson(rootDir: string): Promise<void> {
 async function replaceFrameworkDepsWithRegistryVersion(
   rootDir: string,
 ): Promise<void> {
+  const FRAMEWORK_REGISTRY_VERSION = await getFrameworkRegistryVersion();
   const packageJsonPaths: string[] = [];
 
   async function collect(dir: string): Promise<void> {
@@ -160,15 +158,11 @@ async function replaceFrameworkDepsWithRegistryVersion(
         string,
         unknown
       >)) {
-        const isWorkspaceProtocol =
-          typeof value === 'string' &&
-          (value === 'workspace:*' || value.startsWith('workspace:'));
-
-        if (name.startsWith(FRAMEWORK_SCOPE) && isWorkspaceProtocol) {
-          (pkg[key] as Record<string, string>)[name] =
-            FRAMEWORK_REGISTRY_VERSION;
-          changed = true;
-        }
+        if (!name.startsWith(FRAMEWORK_SCOPE)) continue;
+        if (typeof value !== 'string') continue;
+        if (value.startsWith('file:') || value.startsWith('link:')) continue;
+        (pkg[key] as Record<string, string>)[name] = FRAMEWORK_REGISTRY_VERSION;
+        changed = true;
       }
     }
 

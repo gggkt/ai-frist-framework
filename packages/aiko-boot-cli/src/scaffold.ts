@@ -1,5 +1,6 @@
 import path from 'path';
 import fs from 'fs-extra';
+import { getFrameworkRegistryVersion } from './core/framework-version.js';
 
 const COPY_IGNORE = [
   'node_modules',
@@ -25,9 +26,6 @@ const SKIP_WHEN_BARE = [
 ];
 
 const FRAMEWORK_SCOPE = '@ai-partner-x/';
-/** Registry version range for @ai-partner-x/* so quickly published versions stay compatible. */
-const FRAMEWORK_REGISTRY_VERSION =
-  process.env.AI_PARTNER_FRAMEWORK_VERSION ?? '^0.1.3';
 
 export type CreateOptions = {
   templateDir: string;
@@ -79,6 +77,7 @@ export async function createScaffold(options: CreateOptions): Promise<void> {
 
 /** 将各 package.json 中 @ai-partner-x/* 的 workspace: 协议改为 registry 版本（如 ^0.1.0），与根目录 pnpm.overrides 配合使用 */
 async function replaceFrameworkDepsWithRegistryVersion(targetDir: string): Promise<void> {
+  const FRAMEWORK_REGISTRY_VERSION = await getFrameworkRegistryVersion();
   const packageJsonPaths: string[] = [];
   async function collect(dir: string): Promise<void> {
     const entries = await fs.readdir(dir, { withFileTypes: true });
@@ -99,12 +98,12 @@ async function replaceFrameworkDepsWithRegistryVersion(targetDir: string): Promi
     for (const key of ['dependencies', 'devDependencies'] as const) {
       if (!pkg[key]) continue;
       for (const [name, value] of Object.entries(pkg[key])) {
-        const isWorkspaceProtocol =
-          typeof value === 'string' && (value === 'workspace:*' || value.startsWith('workspace:'));
-        if (name.startsWith(FRAMEWORK_SCOPE) && isWorkspaceProtocol) {
-          (pkg[key] as Record<string, string>)[name] = FRAMEWORK_REGISTRY_VERSION;
-          changed = true;
-        }
+        if (!name.startsWith(FRAMEWORK_SCOPE)) continue;
+        if (typeof value !== 'string') continue;
+        // 只要是框架包，一律写 registry 版本范围（除非显式用 file:/link: 做本地调试）
+        if (value.startsWith('file:') || value.startsWith('link:')) continue;
+        (pkg[key] as Record<string, string>)[name] = FRAMEWORK_REGISTRY_VERSION;
+        changed = true;
       }
     }
     if (changed) await fs.writeJson(pkgPath, pkg, { spaces: 2 });
