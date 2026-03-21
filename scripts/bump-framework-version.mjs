@@ -3,7 +3,7 @@ import fs from 'fs-extra';
 
 /**
  * 用法：
- *   node ./scripts/bump-framework-version.mjs --version 0.1.4
+ *   node ./scripts/bump-framework-version.mjs --version 0.1.5
  *
  * 作用：
  * - 扫描仓库根目录下 packages/（每个子目录的 package.json）
