@@ -4,8 +4,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build --mode prod",
+    "dev": "vite --mode dev",
+    "dev:dev": "vite --mode dev",
+    "dev:stage": "vite --mode stage",
+    "dev:prod": "vite --mode prod",
+    "build": "pnpm build:prod",
+    "build:dev": "tsc && vite build --mode dev",
+    "build:stage": "tsc && vite build --mode stage",
+    "build:prod": "tsc && vite build --mode prod",
     "preview": "vite preview"
   },
   "dependencies": {

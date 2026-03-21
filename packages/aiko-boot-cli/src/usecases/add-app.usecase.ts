@@ -10,6 +10,7 @@ import {
   withProjectConfig,
 } from '../core/workspace.js';
 import { replaceScopeInDir } from '../core/template-utils.js';
+import { createEnvUseCase } from './env.usecase.js';
 
 export type AddAppInput = {
   name?: string;
@@ -139,6 +140,21 @@ export function createAddAppUseCase(deps: AddAppDeps) {
 
     // 同步根 package.json（dev:admin / dev:mobile 等脚本）
     await syncRootPackageJson(rootDir);
+
+    // 补齐现有工程已启用的环境（例如用户先 `env add qa`，再 add-app 时，新的 app 也应拥有 .env.qa 与对应脚本）
+    const envUseCase = createEnvUseCase({ logger });
+    const existingModes = await envUseCase.list({ rootDir });
+    const modesToEnsure = existingModes.length > 0 ? existingModes : ['dev', 'stage', 'prod'];
+    for (const mode of modesToEnsure) {
+      await envUseCase.add({
+        rootDir,
+        mode,
+        dryRun: false,
+        force: false,
+        onExisting: 'skip',
+        injectScripts: true,
+      });
+    }
 
     logger.info(`已在 ${appDir} 创建 ${type} 应用 "${name}"。`);
   }

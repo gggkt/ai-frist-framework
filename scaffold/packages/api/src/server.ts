@@ -2,15 +2,25 @@ import 'reflect-metadata';
 import express from 'express';
 import { createApp } from '@ai-partner-x/aiko-boot';
 import { autoInit, getLogger } from '@ai-partner-x/aiko-boot-starter-log';
+import { config as loadDotenv } from 'dotenv';
+import { existsSync } from 'fs';
+import { join } from 'path';
 
 autoInit();
 const logger = getLogger('server');
 
 logger.info('Starting API server...');
 
-import { join } from 'path';
-
 const projectDir = process.cwd();
+const appEnv = process.env.APP_ENV || 'dev';
+const envFile = join(projectDir, `.env.${appEnv}`);
+if (existsSync(envFile)) {
+  loadDotenv({ path: envFile, override: false });
+  logger.info(`Loaded env file: ${envFile}`);
+} else {
+  logger.warn(`Env file not found: ${envFile}`);
+}
+
 const srcDir = join(projectDir, 'src'); // Framework scans for controller/service/mapper relative to srcDir
 const configPath = projectDir; // configPath should point to the directory with node_modules
 const context = await createApp({ srcDir, configPath, verbose: true });

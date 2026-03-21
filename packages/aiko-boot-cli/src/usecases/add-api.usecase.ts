@@ -10,6 +10,7 @@ import {
   withProjectConfig,
 } from '../core/workspace.js';
 import { replaceScopeInDir } from '../core/template-utils.js';
+import { createEnvUseCase } from './env.usecase.js';
 
 export type AddApiInput = {
   name?: string;
@@ -120,6 +121,21 @@ export function createAddApiUseCase(deps: AddApiDeps) {
 
     // 同步根 package.json（dev/build/start:api 等脚本）
     await syncRootPackageJson(rootDir);
+
+    // 补齐现有工程已启用的环境（例如用户先 `env add qa`，再 add-api 时，新的 api 也应拥有 .env.qa 与对应脚本）
+    const envUseCase = createEnvUseCase({ logger });
+    const existingModes = await envUseCase.list({ rootDir });
+    const modesToEnsure = existingModes.length > 0 ? existingModes : ['dev', 'stage', 'prod'];
+    for (const mode of modesToEnsure) {
+      await envUseCase.add({
+        rootDir,
+        mode,
+        dryRun: false,
+        force: false,
+        onExisting: 'skip',
+        injectScripts: true,
+      });
+    }
 
     logger.info(
       `已在 ${apiDir} 创建服务端 "${name}"（db=${input.db}）。`,

@@ -67,10 +67,30 @@ export async function syncRootPackageJson(rootDir: string): Promise<void> {
 
   const scripts: Record<string, string> = pkg.scripts ?? {};
 
-  // 通用脚本：对所有 @<scope>/* 包执行 dev / build / lint
-  scripts.dev = `pnpm -r --parallel --filter "@${scope}/*" dev`;
-  scripts.build = `pnpm -r --filter "@${scope}/*" build`;
-  scripts.lint = `pnpm -r --filter "@${scope}/*" lint`;
+  // 通用脚本：仅对配置中出现的 api / apps 执行 dev/build，避免 core/shared 被误启动
+  const apiPkgs = (config.apis ?? []).map((x) => `@${scope}/${x.name}`);
+  const appPkgs = (config.apps ?? []).map((x) => `@${scope}/${x.name}`);
+
+  const allRunPkgs = [...apiPkgs, ...appPkgs];
+  const toPnpmFilterArgs = (pkgs: string[]) =>
+    pkgs.map((p) => `--filter "${p}"`).join(" ");
+
+  if (allRunPkgs.length > 0) {
+    scripts.dev = `pnpm -r --parallel ${toPnpmFilterArgs(allRunPkgs)} dev`;
+    scripts.build = `pnpm -r ${toPnpmFilterArgs(allRunPkgs)} build`;
+  }
+
+  // lint：包含 core（模板 core 一般有 lint），避免在生成项目里遗漏
+  const corePkgName = `@${scope}/core`;
+  const corePkgPath = path.join(rootDir, 'packages', 'core', 'package.json');
+  const lintPkgs = (await fs.pathExists(corePkgPath)) ? [...allRunPkgs, corePkgName] : allRunPkgs;
+  scripts.lint = `pnpm -r ${toPnpmFilterArgs(lintPkgs)} lint`;
+
+  // Environment-level scripts（stage/prod）
+  if (allRunPkgs.length > 0) {
+    scripts['dev:stage'] = `pnpm -r --parallel ${toPnpmFilterArgs(allRunPkgs)} dev:stage`;
+    scripts['dev:prod'] = `pnpm -r --parallel ${toPnpmFilterArgs(allRunPkgs)} dev:prod`;
+  }
 
   // API 相关脚本：只针对 name === 'api' 的服务，保持与 scaffold 模板一致
   const api = (config.apis ?? []).find((x) => x.name === 'api');

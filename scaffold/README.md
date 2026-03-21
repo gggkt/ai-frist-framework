@@ -14,8 +14,8 @@ pnpm install
 # 3. 初始化数据库（首次）
 pnpm init-db
 
-# 4. 启动 API 服务
-pnpm dev:api
+# 4. 启动（全量 dev：api + admin + mobile）
+pnpm dev
 ```
 
 **启动成功后访问：**
@@ -41,6 +41,7 @@ scaffold/
 │   └── mobile       # 移动端 H5（Vite + React，鉴权由 @scaffold/core 提供）
 ├── docs/
 │   └── auth-shared-design.md       # Auth 设计说明（@scaffold/core）
+│   └── environment.md              # 多环境配置规范
 └── package.json
 ```
 
@@ -73,7 +74,7 @@ pnpm install
 cd scaffold && pnpm install
 ```
 
-`init-db` 使用纯 JS 的 sql.js，无需编译。**运行 API 服务**（`pnpm dev:api`）时依赖 better-sqlite3 原生模块；若报错找不到 bindings，在**仓库根**执行（会进入 better-sqlite3 目录执行 `node-gyp rebuild`）：
+`init-db` 使用纯 JS 的 sql.js，无需编译。**启动 API 服务** 时依赖 better-sqlite3 原生模块（例如：使用 `pnpm dev` 或进入 `packages/api` 后执行 `pnpm dev:dev`）；若报错找不到 bindings，在**仓库根**执行（会进入 better-sqlite3 目录执行 `node-gyp rebuild`）：
 
 ```bash
 pnpm run rebuild:sqlite
@@ -89,13 +90,9 @@ pnpm init-db    # 首次运行：初始化 SQLite 数据库
 pnpm dev        # 并行启动 api + admin + mobile
 ```
 
-或分别启动：
+多环境运行（dev/stage/prod）见：`docs/environment.md`
 
-- `pnpm dev:api`    — API 默认 http://localhost:3001
-- `pnpm dev:admin`  — Admin 管理端（留空）
-- `pnpm dev:mobile` — Mobile 默认 http://localhost:3002
-
-**API 热更新**（与 user-crud 一致）：`pnpm dev:api` 会同时跑 **codegen watch** 与 **HTTP 服务**。修改 `entity/`、`dto/`、`controller/` 后会自动重新生成 `dist/client`，前端可即时引用新类型与接口；改 `src/server.ts` 会触发服务重启。
+**API 热更新**：当你运行 `packages/api` 的 `pnpm dev:dev/dev:stage/dev:prod`（或在根目录跑 `pnpm dev/dev:stage/dev:prod` 时 api 也会同步以对应模式启动）时，会同时跑 **codegen watch** 与 **HTTP 服务**。修改 `entity/`、`dto/`、`controller/` 后会自动重新生成 `dist/client`，前端可即时引用新类型与接口；改 `src/server.ts` 会触发服务重启。
 
 ## 构建
 

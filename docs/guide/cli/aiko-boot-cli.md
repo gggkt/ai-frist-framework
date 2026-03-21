@@ -31,6 +31,10 @@ aiko-boot --help
 - **`add-api`**：在现有脚手架中新增后端服务（api）
 - **`add-feature`**：给某个服务端增加特性（redis / file / mq / log）
 - **`list`**：查看当前脚手架配置（apps / apis / features）
+- **`env`**：
+  - `env list`：列出现有的 `.env.<mode>`（并展示缺失情况）
+  - `env add <mode>`：生成 `.env.<mode>` 并注入对应脚本（根目录 `dev:<mode>` + 各包 `dev:<mode>/build:<mode>/start:<mode>`）
+  - `env remove <mode>`：删除 `.env.<mode>` 并清理对应脚本
 
 > 脚手架根目录通过 `.aiko-boot.json` 识别；多数“增量命令”要求在脚手架根目录执行，或用 `--root` 显式指定。
 
@@ -91,7 +95,7 @@ aiko-boot add-app mobile -t mobile --template-dir scaffold
 
 ### 2）启动方式（推荐在根目录用 pnpm scripts）
 
-CLI 会根据 `.aiko-boot.json` 同步根目录 `package.json` scripts（如 `dev/build/lint` 以及 `dev:api/dev:admin/dev:mobile`）。
+CLI 会根据 `.aiko-boot.json` 同步根目录 `package.json` scripts（如 `dev/build/lint`、以及环境级的 `dev:stage/dev:prod`）。
 
 常用命令：
 
@@ -99,11 +103,42 @@ CLI 会根据 `.aiko-boot.json` 同步根目录 `package.json` scripts（如 `de
 # 并行启动所有 @<scope>/* 包的 dev
 pnpm dev
 
+# 预发环境 / 生产环境（全量启动）
+pnpm dev:stage
+pnpm dev:prod
+
 # 只启动 api / admin / mobile（如果存在）
 pnpm dev:api
 pnpm dev:admin
 pnpm dev:mobile
 ```
+
+### 2.1 环境命令（`env`）
+
+环境文件与对应脚本的生成/删除，使用 `aiko-boot env`：
+
+> `create` / `add-api` / `add-app` 会自动补齐默认的 `dev/stage/prod` 三套 `.env.<mode>`（默认情况下只在缺失时生成，不覆盖已有文件）。
+
+```bash
+# 列出现有的 .env.<mode>（并标记缺失）
+aiko-boot env list --root .
+
+# 新增环境（例如 qa），生成 .env.qa 并注入脚本
+aiko-boot env add qa --root .
+
+# 删除环境（例如 qa）
+aiko-boot env remove qa --root .
+
+# 可选：dry-run / force
+aiko-boot env add qa --root . --dry-run
+aiko-boot env add qa --root . --force
+```
+
+注入的脚本包括：
+
+- 根目录：`dev:<mode>`（`mode=dev` 对应的是根目录的 `dev`）
+- 后端 `api`：`dev:<mode>` / `start:<mode>`
+- 前端 `admin/mobile`：`dev:<mode>` / `build:<mode>`
 
 ### 3）后端（API）端口怎么配置？
 

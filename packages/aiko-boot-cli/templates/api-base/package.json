@@ -10,13 +10,19 @@
     }
   },
   "scripts": {
-    "dev": "concurrently -n codegen,server -c blue,green \"pnpm codegen:watch\" \"node --import @swc-node/register/esm-register --watch src/server.ts\"",
+    "dev": "pnpm dev:dev",
+    "dev:dev": "cross-env APP_ENV=dev NODE_ENV=development concurrently -n codegen,server -c blue,green \"pnpm codegen:watch\" \"node --import @swc-node/register/esm-register --watch src/server.ts\"",
+    "dev:stage": "cross-env APP_ENV=stage NODE_ENV=production concurrently -n codegen,server -c blue,green \"pnpm codegen:watch\" \"node --import @swc-node/register/esm-register --watch src/server.ts\"",
+    "dev:prod": "cross-env APP_ENV=prod NODE_ENV=production concurrently -n codegen,server -c blue,green \"pnpm codegen:watch\" \"node --import @swc-node/register/esm-register --watch src/server.ts\"",
     "dev:server": "node --import @swc-node/register/esm-register --watch src/server.ts",
     "codegen:watch": "node scripts/codegen.cjs --watch",
     "init-db": "node --import @swc-node/register/esm-register src/scripts/init-db.ts",
     "codegen": "node scripts/codegen.cjs",
     "build": "pnpm codegen && tsup",
-    "start": "node dist/server.js",
+    "start": "cross-env APP_ENV=prod NODE_ENV=production node dist/server.js",
+    "start:dev": "cross-env APP_ENV=dev NODE_ENV=development node dist/server.js",
+    "start:stage": "cross-env APP_ENV=stage NODE_ENV=production node dist/server.js",
+    "start:prod": "cross-env APP_ENV=prod NODE_ENV=production node dist/server.js",
     "lint": "eslint src"
   },
   "dependencies": {
@@ -34,7 +40,8 @@
     "date-fns": "^4.1.0",
     "express": "^4.18.0",
     "axios": "^1.6.0",
-    "reflect-metadata": "^0.2.1"
+    "reflect-metadata": "^0.2.1",
+    "dotenv": "^17.2.3"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",

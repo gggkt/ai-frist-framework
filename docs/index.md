@@ -52,6 +52,7 @@ features:
 - **Scaffold**
   - [Admin App Skill](/scaffold/admin-app-skill)
   - [Core Auth Skill](/scaffold/core-auth-skill)
+  - [Scaffold 多环境配置](/scaffold/multi-environment-config)
 - **工程规范与发布**
   - [Git 工作流](/engineering/git-workflow)
   - [Commit 规范与测试](/engineering/commit-and-testing)

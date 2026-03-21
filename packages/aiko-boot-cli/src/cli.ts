@@ -11,6 +11,7 @@ import { registerAddAppCommand } from './commands/add-app.js';
 import { registerAddApiCommand } from './commands/add-api.js';
 import { registerAddFeatureCommand } from './commands/add-feature.js';
 import { registerListCommand } from './commands/list.js';
+import { registerEnvCommand } from './commands/env.js';
 
 const require = createRequire(import.meta.url);
 const { version } = require('../package.json') as { version: string };
@@ -31,6 +32,7 @@ export function runCli(argv = process.argv): void {
   registerAddApiCommand(program);
   registerAddFeatureCommand(program);
   registerListCommand(program);
+  registerEnvCommand(program);
 
   program.parse(argv);
 }

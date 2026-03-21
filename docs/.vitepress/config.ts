@@ -101,6 +101,7 @@ export default withMermaid(
         items: [
           { text: 'Admin App Skill', link: '/scaffold/admin-app-skill' },
           { text: 'Core Auth Skill', link: '/scaffold/core-auth-skill' },
+          { text: 'Scaffold 多环境配置', link: '/scaffold/multi-environment-config' },
         ],
       },
       {
